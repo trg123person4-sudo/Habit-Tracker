@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habit Tracker</title>
+
+  <!-- Aggressive cache prevention for local development -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #FAF7F1;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+    }
+  </style>
+
+  <!-- File Protocol Detection Banner -->
+  <script>
+    if (window.location.protocol === 'file:') {
+      window.addEventListener('DOMContentLoaded', function() {
+        var warn = document.createElement('div');
+        warn.style = "background:#B0654A;color:#FAF7F1;padding:16px 20px;font-family:sans-serif;font-size:14px;text-align:center;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,0.15);position:sticky;top:0;z-index:999999;";
+        warn.innerHTML = "<strong>⚠️ File Protocol Detected (file://)</strong><br/>Modern browsers restrict external scripts over file:// due to CORS policies.<br/>Please run <code>run_server.bat</code> and visit <a href='http://localhost:8080' style='color:#FAF7F1;text-decoration:underline;font-weight:bold;'>http://localhost:8080</a> in your browser.";
+        document.body.insertBefore(warn, document.body.firstChild);
+      });
+    }
+  </script>
+
+  <!-- React & ReactDOM (Production for speed and clean clicks) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Supabase JS v2 SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- EmailJS v4 SDK -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function(){
+      try {
+        emailjs.init({
+          publicKey: "gWFmTRlE96gpgXAay",
+        });
+      } catch(e) {}
+    })();
+  </script>
+  <!-- Anti-Clickjacking Frame Busting -->
+  <script>
+    if (window.top !== window.self) {
+      window.top.location = window.self.location;
+    }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="app.jsx?v=20260912_v212_security_hardened"></script>
+</body>
+</html>
