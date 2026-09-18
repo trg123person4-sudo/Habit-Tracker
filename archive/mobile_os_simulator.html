@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyOS64 — Mobile Phone Simulation</title>
+  <style>
+    :root {
+      --phone-width: 400px;
+      --phone-height: 820px;
+      --phone-radius: 52px;
+      --bezel: 14px;
+      --phone-bg: #05070a;
+      --terminal-bg: #000000;
+      --accent: #38d3f8;
+      --green: #4ade80;
+      --yellow: #facc15;
+      --red: #f87171;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 30px 15px;
+      background: radial-gradient(circle at 50% 20%, #172033 0%, #090d16 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .top-nav {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .top-nav h1 {
+      margin: 0 0 6px 0;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .top-nav p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    /* Smartphone Chassis */
+    .phone-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .phone-case {
+      width: var(--phone-width);
+      height: var(--phone-height);
+      background: #1e293b;
+      border-radius: var(--phone-radius);
+      padding: var(--bezel);
+      box-shadow: 
+        0 0 0 2px #334155,
+        0 0 0 6px #0f172a,
+        0 25px 60px -15px rgba(0, 0, 0, 0.9),
+        0 0 40px rgba(56, 211, 248, 0.2);
+      position: relative;
+      user-select: none;
+    }
+
+    /* Physical buttons on phone sides */
+    .side-btn {
+      position: absolute;
+      background: #334155;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .side-btn:hover { background: #475569; }
+    .btn-power {
+      right: -8px;
+      top: 180px;
+      width: 5px;
+      height: 65px;
+    }
+    .btn-vol-up {
+      left: -8px;
+      top: 150px;
+      width: 5px;
+      height: 50px;
+    }
+    .btn-vol-down {
+      left: -8px;
+      top: 215px;
+      width: 5px;
+      height: 50px;
+    }
+
+    /* Screen display */
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: var(--terminal-bg);
+      border-radius: calc(var(--phone-radius) - var(--bezel));
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    }
+
+    /* Dynamic Island / Notch */
+    .notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 28px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 12px;
+      box-shadow: 0 0 2px rgba(255,255,255,0.1);
+    }
+    .notch-camera {
+      width: 10px;
+      height: 10px;
+      background: #0d1726;
+      border-radius: 50%;
+      border: 1px solid #1e293b;
+    }
+
+    /* Phone Status Bar */
+    .status-bar {
+      height: 44px;
+      padding: 8px 24px 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      z-index: 40;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .battery-icon {
+      width: 20px;
+      height: 11px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 3px;
+      padding: 1px;
+      display: flex;
+      align-items: center;
+    }
+    .battery-level {
+      width: 80%;
+      height: 100%;
+      background: #4ade80;
+      border-radius: 1px;
+    }
+
+    /* Terminal Console Area */
+    .terminal-container {
+      flex: 1;
+      padding: 12px 14px;
+      overflow-y: auto;
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+      font-size: 12.5px;
+      line-height: 1.4;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-break: break-all;
+      cursor: text;
+    }
+    .terminal-container::-webkit-scrollbar { width: 4px; }
+    .terminal-container::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+    /* Colors */
+    .c-cyan   { color: #38d3f8; }
+    .c-green  { color: #4ade80; }
+    .c-yellow { color: #facc15; }
+    .c-red    { color: #f87171; }
+    .c-white  { color: #ffffff; }
+    .c-gray   { color: #94a3b8; }
+    .c-dark   { color: #475569; }
+
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      height: 13px;
+      background: #fff;
+      vertical-align: middle;
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* On-Screen Mobile Keyboard */
+    .mobile-keyboard {
+      background: #181d26;
+      border-top: 1px solid #262f3d;
+      padding: 8px 4px 24px 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      user-select: none;
+    }
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+    .key {
+      background: #2b3545;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: 6px;
+      height: 38px;
+      flex: 1;
+      max-width: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 0 #151b24;
+      transition: all 0.08s ease;
+    }
+    .key:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 #151b24;
+      background: #3b82f6;
+    }
+    .key-special {
+      background: #1e2633;
+      font-size: 12px;
+      max-width: 50px;
+    }
+    .key-space {
+      max-width: 160px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    /* Home indicator line */
+    .home-bar {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 4px;
+      background: #fff;
+      border-radius: 3px;
+      opacity: 0.6;
+    }
+
+    /* Outer Quick Controls Toolbar */
+    .quick-toolbar {
+      margin-top: 25px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: 500px;
+      justify-content: center;
+    }
+    .action-chip {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 7px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .action-chip:hover {
+      background: #334155;
+      color: #38d3f8;
+      border-color: #38d3f8;
+    }
+    .action-chip-primary {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38d3f8;
+    }
+    .action-chip-primary:hover {
+      background: #0369a1;
+    }
+
+    /* Screen Power Off state */
+    .screen-off {
+      background: #000 !important;
+    }
+    .screen-off * {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-nav">
+    <h1>📱 MyOS64 Mobile Simulator</h1>
+    <p>Custom 64-bit OS running in a simulated smartphone environment with full touch keyboard</p>
+  </div>
+
+  <div class="phone-wrapper" id="phoneWrapper">
+    <div class="phone-case">
+      <!-- Hardware buttons -->
+      <div class="side-btn btn-power" onclick="togglePower()" title="Power / Sleep / Wake"></div>
+      <div class="side-btn btn-vol-up" onclick="sendCmd('time')" title="Check Time"></div>
+      <div class="side-btn btn-vol-down" onclick="sendCmd('meminfo')" title="Check Memory"></div>
+
+      <div class="phone-screen" id="phoneScreen">
+        <!-- Dynamic Island -->
+        <div class="notch">
+          <div class="notch-camera"></div>
+        </div>
+
+        <!-- Phone Top Status Bar -->
+        <div class="status-bar">
+          <span id="liveClock">12:00</span>
+          <div class="status-icons">
+            <span>5G</span>
+            <span>📶</span>
+            <div class="battery-icon">
+              <div class="battery-level"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operating System Terminal Display -->
+        <div class="terminal-container" id="terminal" onclick="focusVirtualInput()"></div>
+
+        <!-- Virtual Touch Keyboard -->
+        <div class="mobile-keyboard" id="keyboard">
+          <div class="kb-row">
+            <div class="key" onclick="typeChar('q')">q</div>
+            <div class="key" onclick="typeChar('w')">w</div>
+            <div class="key" onclick="typeChar('e')">e</div>
+            <div class="key" onclick="typeChar('r')">r</div>
+            <div class="key" onclick="typeChar('t')">t</div>
+            <div class="key" onclick="typeChar('y')">y</div>
+            <div class="key" onclick="typeChar('u')">u</div>
+            <div class="key" onclick="typeChar('i')">i</div>
+            <div class="key" onclick="typeChar('o')">o</div>
+            <div class="key" onclick="typeChar('p')">p</div>
+          </div>
+          <div class="kb-row">
+            <div class="key" onclick="typeChar('a')">a</div>
+            <div class="key" onclick="typeChar('s')">s</div>
+            <div class="key" onclick="typeChar('d')">d</div>
+            <div class="key" onclick="typeChar('f')">f</div>
+            <div class="key" onclick="typeChar('g')">g</div>
+            <div class="key" onclick="typeChar('h')">h</div>
+            <div class="key" onclick="typeChar('j')">j</div>
+            <div class="key" onclick="typeChar('k')">k</div>
+            <div class="key" onclick="typeChar('l')">l</div>
+          </div>
+          <div class="kb-row">
+            <div class="key key-special" onclick="toggleShift()">⇧</div>
+            <div class="key" onclick="typeChar('z')">z</div>
+            <div class="key" onclick="typeChar('x')">x</div>
+            <div class="key" onclick="typeChar('c')">c</div>
+            <div class="key" onclick="typeChar('v')">v</div>
+            <div class="key" onclick="typeChar('b')">b</div>
+            <div class="key" onclick="typeChar('n')">n</div>
+            <div class="key" onclick="typeChar('m')">m</div>
+            <div class="key key-special" onclick="backspace()">⌫</div>
+          </div>
+          <div class="kb-row">
+            <div class="key key-special" onclick="sendCmd('clear')">CLR</div>
+            <div class="key key-space" onclick="typeChar(' ')">space</div>
+            <div class="key key-special" onclick="enterKey()" style="background:#0284c7; color:#fff;">return</div>
+          </div>
+        </div>
+
+        <div class="home-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Command Launcher Toolbar -->
+  <div class="quick-toolbar">
+    <button class="action-chip action-chip-primary" onclick="sendCmd('help')">help</button>
+    <button class="action-chip" onclick="sendCmd('ps')">ps</button>
+    <button class="action-chip" onclick="sendCmd('spawn')">spawn (Tasks)</button>
+    <button class="action-chip" onclick="sendCmd('ring3')">ring3 (User Mode)</button>
+    <button class="action-chip" onclick="sendCmd('meminfo')">meminfo</button>
+    <button class="action-chip" onclick="sendCmd('alloc 2048')">alloc 2048</button>
+    <button class="action-chip" onclick="sendCmd('time')">time</button>
+    <button class="action-chip" onclick="sendCmd('panic')" style="color:#f87171;">panic</button>
+    <button class="action-chip" onclick="togglePower()">⏻ Power</button>
+  </div>
+
+  <script>
+    const terminal = document.getElementById("terminal");
+    const liveClock = document.getElementById("liveClock");
+    const phoneScreen = document.getElementById("phoneScreen");
+
+    let buffer = "";
+    let currentInput = "";
+    let isShift = false;
+    let isPowered = true;
+    let ticks = 0;
+    let seconds = 0;
+    let heapAllocated = 1;
+    let heapTotal = 1024;
+    let tasks = [
+      { pid: 1, name: "kernel_shell", state: "RUNNING" }
+    ];
+
+    function updateClock() {
+      const now = new Date();
+      let h = now.getHours();
+      let m = now.getMinutes();
+      if (m < 10) m = "0" + m;
+      liveClock.innerText = h + ":" + m;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function write(html) {
+      buffer += html;
+      render();
+    }
+
+    function render() {
+      terminal.innerHTML = buffer + 
+        '<span class="c-green">myos64</span><span class="c-cyan">> </span>' + 
+        escapeHtml(currentInput) + 
+        '<span class="cursor"></span>';
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function boot() {
+      buffer = "";
+      currentInput = "";
+      write('<span class="c-cyan">========================================</span>\n');
+      write('<span class="c-white">       MyOS64 Mobile Edition v1.0       </span>\n');
+      write('<span class="c-cyan">========================================</span>\n');
+      write('<span class="c-green">[ OK ] </span>CPU: x86_64 Long Mode (64-Bit)\n');
+      write('<span class="c-green">[ OK ] </span>PMM: 125 MiB free / 128 MiB RAM\n');
+      write('<span class="c-green">[ OK ] </span>VMM: 4-Level Paging Engine Active\n');
+      write('<span class="c-green">[ OK ] </span>Heap: Dynamic 1 MiB Pool Ready\n');
+      write('<span class="c-green">[ OK ] </span>Keyboard &amp; PIT 100 Hz Timer Ready\n');
+      write('<span class="c-green">[ OK ] </span>Scheduler: Preemptive Round-Robin\n');
+      write('<span class="c-dark">----------------------------------------</span>\n');
+      write('<span class="c-white">Type \'help\' or tap quick action chips.</span>\n\n');
+    }
+
+    function executeCommand(cmd) {
+      write('<span class="c-green">myos64</span><span class="c-cyan">> </span>' + escapeHtml(cmd) + '\n');
+      const parts = cmd.trim().split(/\s+/);
+      const action = parts[0].toLowerCase();
+
+      if (!action) return;
+
+      if (action === "help") {
+        write('<span class="c-yellow">\nAvailable Commands:\n</span>');
+        write('  help       - Show this list\n');
+        write('  clear      - Clear display\n');
+        write('  about      - OS specifications\n');
+        write('  meminfo    - RAM & Heap stats\n');
+        write('  alloc &lt;n&gt;  - Allocate heap bytes\n');
+        write('  free &lt;ptr&gt; - Free heap block\n');
+        write('  ps         - Process table\n');
+        write('  spawn      - Spawn background tasks\n');
+        write('  ring3      - Test user mode SYSCALL\n');
+        write('  time       - Uptime & PIT ticks\n');
+        write('  panic      - Test CPU exception\n');
+        write('  reboot     - Reboot virtual phone\n\n');
+
+      } else if (action === "clear") {
+        buffer = "";
+
+      } else if (action === "about") {
+        write('\n<span class="c-cyan">========================================\n</span>');
+        write('<span class="c-white">         MyOS64 Phone Edition           \n</span>');
+        write('<span class="c-cyan">========================================\n</span>');
+        write('Arch: x86_64 Long Mode (PML4 Paging)\n');
+        write('Scheduler: 100 Hz Preemptive Round-Robin\n');
+        write('Privilege: Ring 0 (Kernel) / Ring 3 (User)\n');
+        write('Syscalls: Hardware SYSCALL / SYSRET\n\n');
+
+      } else if (action === "meminfo") {
+        write('\n<span class="c-cyan">-- Physical RAM (PMM) --</span>\n');
+        write('Total: 128 MiB | Free: 125 MiB\n');
+        write('<span class="c-cyan">-- Kernel Heap (VMM) --</span>\n');
+        write('Allocated: ' + heapAllocated + ' KiB\n');
+        write('Available: ' + (heapTotal - heapAllocated) + ' KiB\n\n');
+
+      } else if (action === "alloc") {
+        const bytes = parseInt(parts[1]) || 1024;
+        const kb = Math.ceil(bytes / 1024);
+        heapAllocated += kb;
+        const addr = "0x" + (0x40000010 + Math.floor(Math.random() * 0xFFFFF)).toString(16);
+        write('<span class="c-green">Allocated ' + bytes + ' B at ' + addr + '</span>\n');
+
+      } else if (action === "free") {
+        const addr = parts[1] || "0x40000010";
+        if (heapAllocated > 1) heapAllocated = Math.max(1, heapAllocated - 1);
+        write('<span class="c-green">Freed block at ' + addr + ' (coalesced)</span>\n');
+
+      } else if (action === "ps") {
+        write('<span class="c-yellow">\nPID  STATE     NAME\n</span>');
+        write('-------------------------\n');
+        tasks.forEach(t => {
+          let col = t.state === "RUNNING" ? "c-green" : (t.state === "READY" ? "c-cyan" : "c-dark");
+          write(t.pid + '    <span class="' + col + '">' + t.state.padEnd(10, ' ') + '</span>' + t.name + '\n');
+        });
+        write('\n');
+
+      } else if (action === "spawn") {
+        write('<span class="c-cyan">Spawning background worker threads...\n</span>');
+        const p1 = tasks.length + 1;
+        const p2 = tasks.length + 2;
+        tasks.push({ pid: p1, name: "WorkerA", state: "READY" });
+        tasks.push({ pid: p2, name: "WorkerB", state: "READY" });
+        write('<span class="c-green">[ OK ] Spawned WorkerA (' + p1 + ') &amp; WorkerB (' + p2 + ')\n</span>');
+        write('[WorkerA] Step 1/5 running concurrently\n');
+        write('[WorkerB] Step 1/5 running concurrently\n');
+
+      } else if (action === "ring3") {
+        write('<span class="c-cyan">Switching to Ring 3 User Mode via iretq...\n</span>');
+        const uid = tasks.length + 1;
+        tasks.push({ pid: uid, name: "user_task", state: "RUNNING" });
+        write('<span class="c-yellow">>>> [Ring 3] Hello from user space!\n</span>');
+        write('>>> [Ring 3] Invoking SYS_GETPID... PID=' + uid + '\n');
+        write('>>> [Ring 3] SYS_EXIT: Terminating user task.\n\n');
+        tasks[tasks.length - 1].state = "TERMINATED";
+
+      } else if (action === "time") {
+        write('\nUptime: ' + seconds + 's | PIT Ticks: ' + ticks + '\n\n');
+
+      } else if (action === "panic") {
+        write('<span class="c-red">\n*** FATAL CPU EXCEPTION (#DE: Divide-by-Zero) ***\n</span>');
+        write('RIP: 0x00000000001004C2 | CS: 0x08 | RFLAGS: 0x202\n');
+        write('RAX: 0x000000000000002A | RSP: 0x0000000000104E90\n');
+        write('<span class="c-red">System halted. (Tap Power to restart)</span>\n\n');
+
+      } else if (action === "reboot") {
+        write('<span class="c-yellow">Rebooting phone...\n</span>');
+        setTimeout(boot, 800);
+        return;
+
+      } else {
+        write('<span class="c-red">Unknown command: \'' + escapeHtml(parts[0]) + '\'\n</span>');
+      }
+    }
+
+    /* Virtual Keyboard handlers */
+    function typeChar(c) {
+      if (isShift) {
+        c = c.toUpperCase();
+        isShift = false;
+      }
+      currentInput += c;
+      render();
+    }
+
+    function backspace() {
+      if (currentInput.length > 0) {
+        currentInput = currentInput.slice(0, -1);
+        render();
+      }
+    }
+
+    function enterKey() {
+      executeCommand(currentInput);
+      currentInput = "";
+      render();
+    }
+
+    function toggleShift() {
+      isShift = !isShift;
+    }
+
+    function sendCmd(cmd) {
+      if (!isPowered) togglePower();
+      executeCommand(cmd);
+      currentInput = "";
+      render();
+    }
+
+    function togglePower() {
+      isPowered = !isPowered;
+      if (isPowered) {
+        phoneScreen.classList.remove("screen-off");
+        boot();
+      } else {
+        phoneScreen.classList.add("screen-off");
+      }
+    }
+
+    function focusVirtualInput() {
+      // Focus screen
+    }
+
+    /* Physical Keyboard event listener */
+    window.addEventListener("keydown", (e) => {
+      if (!isPowered) return;
+      if (e.key === "Enter") {
+        enterKey();
+      } else if (e.key === "Backspace") {
+        backspace();
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        typeChar(e.key);
+      }
+    });
+
+    /* Hardware timer tick simulation */
+    setInterval(() => {
+      if (!isPowered) return;
+      ticks++;
+      if (ticks % 100 === 0) {
+        seconds++;
+      }
+    }, 10);
+
+    // Initial boot
+    boot();
+  </script>
+</body>
+</html>

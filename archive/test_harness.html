@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body>
+<script>
+  const user = {
+    identifier: 'alex@test.com',
+    username: 'Alex Rivera',
+    code: 'ALEX99',
+    is_admin: true,
+    birthDate: '1998-05-15',
+    ageVerified: true,
+    isReturning: true
+  };
+  localStorage.setItem('habit-auth-session', JSON.stringify(user));
+  
+  const accounts = {
+    'alex@test.com': {
+      email: 'alex@test.com',
+      username: 'Alex Rivera',
+      code: 'ALEX99',
+      is_admin: true,
+      birthDate: '1998-05-15',
+      ageVerified: true,
+      currentStreak: 14,
+      longestStreak: 28
+    }
+  };
+  localStorage.setItem('habit_registered_accounts', JSON.stringify(accounts));
+  
+  const habitsData = {
+    user: 'alex@test.com',
+    habits: [
+      { id: 'h1', name: 'Morning Meditation', frequencyType: 'everyday', category: 'Mind & Wellness', color: '#7C9473', icon: 'zen' },
+      { id: 'h2', name: 'Hydrate 2.5L Water', frequencyType: 'everyday', category: 'Health & Fitness', color: '#557A95', icon: 'water' },
+      { id: 'h3', name: 'Read 20 Pages', frequencyType: 'everyday', category: 'Learning', color: '#B0654A', icon: 'book' }
+    ],
+    completions: {
+      '2026-09-11': { 'h1': true }
+    }
+  };
+  localStorage.setItem('habit_user_data_alex%40test.com', JSON.stringify(habitsData));
+  
+  const todos = [
+    { id: 't1', title: 'Prepare quarterly review notes', priority: 'high', category: 'Work', dueDate: '2026-09-10', completed: false },
+    { id: 't2', title: 'Pick up herbal tea', priority: 'low', category: 'Personal', dueDate: '2026-09-11', completed: false },
+    { id: 't3', title: 'Evening stretch routine', priority: 'medium', category: 'Health', dueDate: '2026-09-11', completed: true }
+  ];
+  localStorage.setItem('habit_todos_alex%40test.com', JSON.stringify(todos));
+
+  const journal = {
+    '2026-09-11': {
+      text: '🌱 What went gently: Had a peaceful morning tea and set clear intentions for the day.',
+      mood: '🌿 Calm',
+      wordCount: 17,
+      updatedAt: new Date().toISOString()
+    }
+  };
+  localStorage.setItem('habit_journal_alex%40test.com', JSON.stringify(journal));
+  
+  window.location.href = 'index.html';
+</script>
+</body>
+</html>

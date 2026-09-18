@@ -1,0 +1,36 @@
+{
+  "name": "nudgepoint",
+  "version": "2.0.0",
+  "description": "The Zero-Login Classroom Pulse & Comprehension Radar",
+  "main": "server.py",
+  "scripts": {
+    "start": "python server.py",
+    "start:lan": "python server.py --lan",
+    "test": "python -m unittest discover tests",
+    "test:multidevice": "python scripts/test_multidevice.py",
+    "test:scale": "python scripts/test_scale_150.py"
+  },
+  "keywords": [
+    "education",
+    "classroom",
+    "pedagogy",
+    "websocket",
+    "comprehension-radar",
+    "stem"
+  ],
+  "author": "NudgePoint Contributors",
+  "license": "MIT",
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "canvas-confetti": "1.9.3",
+    "qrcodejs": "1.0.0",
+    "tailwindcss": "3.4.1"
+  },
+  "devDependencies": {
+    "@babel/standalone": "7.24.0"
+  },
+  "engines": {
+    "python": ">=3.10.0"
+  }
+}

@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EQUUS — The Equine Matchmaking Registry</title>
+
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- Typography: High-Contrast Editorial Serif paired with Restrained Monospace/Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Audio & Data -->
+  <script src="horse_audio.js"></script>
+  <script src="horse_tinder_profiles.js"></script>
+
+  <style>
+    :root {
+      --bg: #F8F7F4;
+      --text: #161616;
+      --text-muted: #737370;
+      --border: #E5E2DA;
+      --accent: #C46849;
+      --surface: #FFFFFF;
+
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ========================================================
+       EDITORIAL MASTHEAD
+    ======================================================== */
+    .masthead {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 36px 40px 24px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-title {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-left: 16px;
+      font-weight: 500;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .nav-link {
+      background: none;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 0;
+      transition: color 0.2s ease;
+      position: relative;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: var(--text);
+    }
+
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .counter-badge {
+      color: var(--accent);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    /* ========================================================
+       MAIN EDITORIAL SPREAD
+    ======================================================== */
+    .editorial-container {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 48px 40px 80px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .spread-layout {
+      display: grid;
+      grid-template-columns: 5fr 6fr;
+      gap: 72px;
+      align-items: start;
+    }
+
+    /* Left Column: Photograph Presentation */
+    .gallery-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .photo-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      background: #EAE8E1;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .primary-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transition: opacity 0.3s ease;
+      display: block;
+    }
+
+    .photo-caption-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-top: 6px;
+    }
+
+    .photo-step-trigger {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .photo-step-trigger:hover {
+      color: var(--text);
+    }
+
+    /* Right Column: Dossier, Narrative & Evaluation */
+    .dossier-column {
+      display: flex;
+      flex-direction: column;
+      padding-top: 8px;
+    }
+
+    .dossier-index {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .horse-name-headline {
+      font-family: var(--font-serif);
+      font-size: 54px;
+      line-height: 1.05;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .horse-epigraph {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-style: italic;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+      max-width: 520px;
+    }
+
+    /* Structured Metadata Table */
+    .metadata-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      row-gap: 20px;
+      column-gap: 32px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 0;
+      margin-bottom: 36px;
+    }
+
+    .meta-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .meta-term {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .meta-value {
+      font-size: 15px;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* Editorial Narrative Body */
+    .narrative-body {
+      font-size: 15px;
+      line-height: 1.85;
+      color: #333333;
+      margin-bottom: 40px;
+      max-width: 540px;
+    }
+
+    /* Behavioral Insights */
+    .traits-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .trait-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .trait-label {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .trait-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Minimalist Action Controls */
+    .action-controls {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-action-pass {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px 28px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn-action-pass:hover {
+      border-color: var(--text);
+    }
+
+    .btn-action-connect {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: #FFFFFF;
+      padding: 14px 36px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .btn-action-connect:hover {
+      opacity: 0.88;
+    }
+
+    .btn-action-whinny {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 14px 10px;
+      transition: color 0.2s ease;
+    }
+
+    .btn-action-whinny:hover {
+      color: var(--accent);
+    }
+
+    .nav-keyboard-guide {
+      margin-top: 18px;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* ========================================================
+       EMPTY / ARCHIVE STATE
+    ======================================================== */
+    .empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 20px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .empty-headline {
+      font-family: var(--font-serif);
+      font-size: 40px;
+      font-weight: 400;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .empty-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+
+    /* ========================================================
+       CORRESPONDENCE & MATCH DRAWER
+    ======================================================== */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 22, 22, 0.4);
+      z-index: 100;
+      display: none;
+      justify-content: flex-end;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .drawer-backdrop.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .drawer-pane {
+      width: 100%;
+      max-width: 520px;
+      height: 100%;
+      background: var(--bg);
+      border-left: 1px solid var(--border);
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .drawer-heading {
+      font-family: var(--font-serif);
+      font-size: 28px;
+      font-weight: 400;
+    }
+
+    .drawer-close-btn {
+      background: none;
+      border: none;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .drawer-close-btn:hover {
+      color: var(--text);
+    }
+
+    /* Conversation Items in Drawer */
+    .correspondence-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .letter-entry {
+      border: 1px solid var(--border);
+      padding: 24px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .letter-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .letter-body {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #262626;
+      font-style: italic;
+    }
+
+    .letter-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .letter-reply-btn {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .letter-reply-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ========================================================
+       DISCOVERY CRITERIA (MODAL)
+    ======================================================== */
+    .settings-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 22, 22, 0.4);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .settings-modal.open {
+      display: flex;
+    }
+
+    .settings-box {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .filter-label {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .filter-select, .filter-range {
+      width: 100%;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+    }
+
+    .filter-select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Notification status */
+    .toast-status {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--text);
+      color: #FFFFFF;
+      padding: 10px 22px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 200;
+    }
+
+    .toast-status.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Responsive Adaptation */
+    @media (max-width: 900px) {
+      .masthead {
+        padding: 24px 20px 18px;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .spread-layout {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .editorial-container {
+        padding: 24px 20px 60px;
+      }
+      .horse-name-headline {
+        font-size: 40px;
+      }
+      .photo-frame {
+        aspect-ratio: 1 / 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= MASTHEAD ================= -->
+  <header class="masthead">
+    <div style="display: flex; align-items: baseline;">
+      <a href="#" class="brand-title">Equus</a>
+      <span class="brand-subtitle">The Equine Companion Registry</span>
+    </div>
+
+    <nav class="nav-links">
+      <button class="nav-link active" id="btnNavRegistry">Dossiers</button>
+      <button class="nav-link" id="btnNavLetters">Correspondence <span class="counter-badge" id="lettersBadge">(1)</span></button>
+      <button class="nav-link" id="btnNavCriteria">Criteria</button>
+      <button class="nav-link" id="btnNavAudio">Audio: On</button>
+    </nav>
+  </header>
+
+  <!-- ================= MAIN EDITORIAL CONTAINER ================= -->
+  <main class="editorial-container">
+
+    <!-- Active Dossier Spread -->
+    <div class="spread-layout" id="dossierSpread">
+
+      <!-- Left Column: Photography -->
+      <section class="gallery-column">
+        <div class="photo-frame" id="photoFrame" title="Click to view alternate plates">
+          <img src="" alt="" class="primary-photo" id="primaryPhoto" />
+        </div>
+        <div class="photo-caption-bar">
+          <span id="plateNumber">Plate I of II</span>
+          <button class="photo-step-trigger" id="btnNextPlate">Next Plate →</button>
+        </div>
+      </section>
+
+      <!-- Right Column: Narrative Dossier -->
+      <section class="dossier-column">
+        <div class="dossier-index" id="dossierIndexTag">Registry Entry 01 / 08</div>
+        <h1 class="horse-name-headline" id="dossierName">Barnaby "Thunderhoof"</h1>
+        <p class="horse-epigraph" id="dossierTagline">"Tall, dark, and terrified of plastic bags in the wind."</p>
+
+        <!-- Metadata Table -->
+        <div class="metadata-grid">
+          <div class="meta-cell">
+            <span class="meta-term">Pedigree / Breed</span>
+            <span class="meta-value" id="metaBreed">Friesian Stallion</span>
+          </div>
+          <div class="meta-cell">
+            <span class="meta-term">Stature & Age</span>
+            <span class="meta-value" id="metaHeightAge">16.2 hh • 7 Years</span>
+          </div>
+          <div class="meta-cell">
+            <span class="meta-term">Station / Origin</span>
+            <span class="meta-value" id="metaLocation">Lexington, Kentucky</span>
+          </div>
+          <div class="meta-cell">
+            <span class="meta-term">Discipline</span>
+            <span class="meta-value" id="metaDiscipline">Grand Prix Dressage</span>
+          </div>
+        </div>
+
+        <!-- Narrative Biography -->
+        <p class="narrative-body" id="dossierBio">
+          Grand Prix Dressage prodigy by day, drama king by night. My mane takes 45 minutes to condition and yes, I do flick it when I trot past your barn. Looking for a mare who appreciates majestic slow-motion canters and won't judge me when I refuse to walk past an oddly shaped puddle.
+        </p>
+
+        <!-- Behavioral Observations -->
+        <div class="traits-section">
+          <div class="trait-row">
+            <span class="trait-label">Affinities & Courtesies</span>
+            <span class="trait-text" id="traitAffinities">Warm alfalfa cubes, classical piano during schooling, withers scratching.</span>
+          </div>
+          <div class="trait-row">
+            <span class="trait-label">Documented Sensitivities</span>
+            <span class="trait-text" id="traitSensitivities">Puddles deeper than two inches, windblown plastic bags, the farrier's heavy leather apron.</span>
+          </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="action-controls">
+          <button class="btn-action-pass" id="btnPass">Archive / Pass</button>
+          <button class="btn-action-connect" id="btnConnect">Inquire / Match</button>
+          <button class="btn-action-whinny" id="btnPlayVocal">Audition Whinny</button>
+        </div>
+
+        <div class="nav-keyboard-guide">
+          Navigation: [←] Archive &nbsp;&nbsp;&nbsp; [→] Connect &nbsp;&nbsp;&nbsp; [Space] Audio
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Empty Registry State -->
+    <div class="empty-state" id="emptyState">
+      <h2 class="empty-headline">Registry Concluded</h2>
+      <p class="empty-text">
+        All registered horses within the current criteria have been examined. You may reset the index or refine your search parameters.
+      </p>
+      <button class="btn-action-connect" id="btnResetIndex">Reopen Registry</button>
+    </div>
+
+  </main>
+
+  <!-- ================= CORRESPONDENCE DRAWER ================= -->
+  <div class="drawer-backdrop" id="lettersDrawer">
+    <div class="drawer-pane">
+      <div class="drawer-header">
+        <h2 class="drawer-heading">Correspondence</h2>
+        <button class="drawer-close-btn" id="btnCloseLetters">Close</button>
+      </div>
+
+      <div class="correspondence-list" id="correspondenceList">
+        <!-- Letter entries injected by script -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DISCOVERY CRITERIA MODAL ================= -->
+  <div class="settings-modal" id="criteriaModal">
+    <div class="settings-box">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border); padding-bottom: 14px;">
+        <h3 style="font-family: var(--font-serif); font-size: 22px; font-weight: 400;">Registry Criteria</h3>
+        <button class="drawer-close-btn" id="btnCloseCriteria">Close</button>
+      </div>
+
+      <div>
+        <label class="filter-label">Breed Classification</label>
+        <select class="filter-select" id="selectBreedCriteria">
+          <option value="all">All Classifications</option>
+          <option value="draft">Draft & Warmblood (Friesian, Clydesdale)</option>
+          <option value="thoroughbred">Thoroughbred</option>
+          <option value="arabian">Arabian</option>
+          <option value="pony">Pony & Shetland</option>
+          <option value="mustang">Western & Appaloosa</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="filter-label">Maximum Radius: <span id="radiusDisplay">30 Miles</span></label>
+        <input type="range" class="filter-range" id="rangeDistance" min="1" max="50" value="30" style="accent-color: var(--accent);" />
+      </div>
+
+      <button class="btn-action-connect" id="btnApplyCriteria" style="width: 100%;">Apply Criteria</button>
+    </div>
+  </div>
+
+  <!-- ================= AGE VERIFICATION GATE (18+) ================= -->
+  <div class="settings-modal" id="ageGateModal" style="z-index: 9999; background: rgba(18, 18, 18, 0.9); backdrop-filter: blur(8px);">
+    <div class="settings-box" style="max-width: 460px; text-align: center; border: 1px solid #D5CEBE; background: #FAF7F2; box-shadow: 0 16px 40px rgba(0,0,0,0.25);">
+      <div style="font-family: var(--font-serif); font-size: 28px; text-transform: uppercase; letter-spacing: 0.15em; color: #161616; margin-bottom: 6px;">
+        EQUUS REGISTRY
+      </div>
+      <div style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #C46849; font-weight: 600; margin-bottom: 16px;">
+        Age Verification Required (18+)
+      </div>
+      <p style="font-size: 13.5px; color: #55524B; line-height: 1.6; margin-bottom: 20px; text-align: left;">
+        This application provides an equine matchmaking and pedigree registry. To protect user safety and comply with digital age of consent laws, you must be <strong>at least 18 years old</strong> to access this registry.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; text-align: left;">
+        <label class="filter-label">Select Your Birth Year</label>
+        <select class="filter-select" id="selectBirthYear" style="width: 100%; padding: 12px 14px; border: 1px solid #D5CEBE; background: #FFFFFF; font-family: var(--font-sans); font-size: 14px; color: #161616; outline: none;">
+          <option value="">-- Choose Birth Year --</option>
+        </select>
+        <div id="ageGateError" style="display: none; font-size: 12px; color: #C46849; line-height: 1.4; padding: 4px 0;"></div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button id="btnExitUnder18" style="flex: 1; padding: 12px 14px; background: none; border: 1px solid #D5CEBE; color: #737370; font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;">
+          I am under 18 (Exit)
+        </button>
+        <button id="btnConfirmAge" class="btn-action-connect" style="flex: 1.4; padding: 12px 16px; font-size: 11px;">
+          Verify & Enter →
+        </button>
+      </div>
+
+      <div style="font-size: 10.5px; color: #8C887F; margin-top: 16px; line-height: 1.4; text-align: left;">
+        By continuing, you confirm you meet the minimum age requirements and consent to our safety policies.
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Notification -->
+  <div class="toast-status" id="toastStatus">Notification</div>
+
+  <!-- Application Logic -->
+  <script>
+    (function() {
+      let activeIndex = 0;
+      let activePlateIndex = 0;
+      let filteredDeck = [];
+      let correspondence = [];
+
+      // Elements
+      const dossierSpread = document.getElementById('dossierSpread');
+      const emptyState = document.getElementById('emptyState');
+      const primaryPhoto = document.getElementById('primaryPhoto');
+      const plateNumber = document.getElementById('plateNumber');
+      const dossierIndexTag = document.getElementById('dossierIndexTag');
+      const dossierName = document.getElementById('dossierName');
+      const dossierTagline = document.getElementById('dossierTagline');
+      const metaBreed = document.getElementById('metaBreed');
+      const metaHeightAge = document.getElementById('metaHeightAge');
+      const metaLocation = document.getElementById('metaLocation');
+      const metaDiscipline = document.getElementById('metaDiscipline');
+      const dossierBio = document.getElementById('dossierBio');
+      const traitAffinities = document.getElementById('traitAffinities');
+      const traitSensitivities = document.getElementById('traitSensitivities');
+      const toastStatus = document.getElementById('toastStatus');
+
+      // Modals
+      const lettersDrawer = document.getElementById('lettersDrawer');
+      const criteriaModal = document.getElementById('criteriaModal');
+      const correspondenceList = document.getElementById('correspondenceList');
+      const lettersBadge = document.getElementById('lettersBadge');
+
+      function init() {
+        checkAgeVerification();
+        setupAudioToggle();
+        setupModals();
+        setupKeyboard();
+        buildDeck();
+        loadCorrespondence();
+      }
+
+      function notify(msg) {
+        toastStatus.textContent = msg;
+        toastStatus.classList.add('show');
+        setTimeout(() => toastStatus.classList.remove('show'), 2000);
+      }
+
+      function buildDeck() {
+        const cat = document.getElementById('selectBreedCriteria').value;
+        const maxDist = parseInt(document.getElementById('rangeDistance').value, 10);
+
+        filteredDeck = window.HORSE_PROFILES.filter(h => {
+          if (cat !== 'all' && h.breedCategory !== cat) return false;
+          if (h.distance > maxDist) return false;
+          return true;
+        });
+
+        activeIndex = 0;
+        activePlateIndex = 0;
+        renderCurrentDossier();
+      }
+
+      function renderCurrentDossier() {
+        if (activeIndex >= filteredDeck.length) {
+          dossierSpread.style.display = 'none';
+          emptyState.style.display = 'flex';
+          return;
+        }
+
+        dossierSpread.style.display = 'grid';
+        emptyState.style.display = 'none';
+
+        const horse = filteredDeck[activeIndex];
+        const allPlates = [horse.photo].concat(horse.additionalPhotos || []);
+        
+        activePlateIndex = 0;
+        primaryPhoto.style.opacity = '0';
+        setTimeout(() => {
+          primaryPhoto.src = allPlates[activePlateIndex];
+          primaryPhoto.onerror = () => { primaryPhoto.src = window.getHorseSvgAvatar(horse.accentColor); };
+          primaryPhoto.style.opacity = '1';
+        }, 150);
+
+        plateNumber.textContent = `Plate I of ${allPlates.length}`;
+        dossierIndexTag.textContent = `Registry Entry 0${activeIndex + 1} / 0${filteredDeck.length}`;
+        dossierName.textContent = horse.name;
+        dossierTagline.textContent = `"${horse.tagline}"`;
+        metaBreed.textContent = `${horse.breed} ${horse.gender}`;
+        metaHeightAge.textContent = `${horse.height} • ${horse.age} Years`;
+        metaLocation.textContent = horse.location;
+        metaDiscipline.textContent = horse.discipline;
+        dossierBio.textContent = horse.bio;
+        traitAffinities.textContent = horse.greenFlags.join(', ') + '.';
+        traitSensitivities.textContent = horse.redFlags.join(', ') + '.';
+      }
+
+      function stepPlate() {
+        const horse = filteredDeck[activeIndex];
+        if (!horse) return;
+        const allPlates = [horse.photo].concat(horse.additionalPhotos || []);
+        if (allPlates.length <= 1) return;
+
+        activePlateIndex = (activePlateIndex + 1) % allPlates.length;
+        primaryPhoto.style.opacity = '0';
+        setTimeout(() => {
+          primaryPhoto.src = allPlates[activePlateIndex];
+          primaryPhoto.style.opacity = '1';
+          plateNumber.textContent = `Plate ${romanize(activePlateIndex + 1)} of ${allPlates.length}`;
+        }, 150);
+      }
+
+      function romanize(num) {
+        const lookup = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV' };
+        return lookup[num] || num;
+      }
+
+      // Actions
+      document.getElementById('btnPass').addEventListener('click', () => {
+        window.horseAudio.playWhoosh('left');
+        notify('Dossier Archived');
+        activeIndex++;
+        renderCurrentDossier();
+      });
+
+      document.getElementById('btnConnect').addEventListener('click', () => {
+        const horse = filteredDeck[activeIndex];
+        window.horseAudio.playClipClop();
+        recordMatch(horse);
+        notify(`Inquiry Sent to ${horse.name}`);
+        activeIndex++;
+        renderCurrentDossier();
+      });
+
+      document.getElementById('btnPlayVocal').addEventListener('click', () => {
+        const horse = filteredDeck[activeIndex];
+        if (horse) {
+          window.horseAudio.playWhinny(horse.audioPersonality);
+          notify(`Auditioning Whinny: ${horse.name}`);
+        }
+      });
+
+      document.getElementById('photoFrame').addEventListener('click', stepPlate);
+      document.getElementById('btnNextPlate').addEventListener('click', stepPlate);
+
+      document.getElementById('btnResetIndex').addEventListener('click', () => {
+        activeIndex = 0;
+        renderCurrentDossier();
+        notify('Registry Reopened');
+      });
+
+      // Correspondence Management
+      function loadCorrespondence() {
+        const saved = JSON.parse(localStorage.getItem('equus_letters') || 'null');
+        if (saved && Array.isArray(saved)) {
+          correspondence = saved;
+        } else {
+          correspondence = [
+            {
+              horse: window.HORSE_PROFILES[0],
+              date: 'September 18',
+              excerpt: window.HORSE_PROFILES[0].chatStarters[1]
+            }
+          ];
+        }
+        renderCorrespondence();
+      }
+
+      function recordMatch(horse) {
+        if (!correspondence.some(c => c.horse.id === horse.id)) {
+          correspondence.unshift({
+            horse: horse,
+            date: 'Today',
+            excerpt: horse.chatStarters[0]
+          });
+          localStorage.setItem('equus_letters', JSON.stringify(correspondence));
+          renderCorrespondence();
+        }
+      }
+
+      function renderCorrespondence() {
+        correspondenceList.innerHTML = '';
+        lettersBadge.textContent = `(${correspondence.length})`;
+
+        correspondence.forEach((c) => {
+          const entry = document.createElement('article');
+          entry.className = 'letter-entry';
+          entry.innerHTML = `
+            <div class="letter-meta">
+              <span>${c.horse.name} • ${c.horse.location}</span>
+              <span>${c.date}</span>
+            </div>
+            <p class="letter-body">"${c.excerpt}"</p>
+            <div class="letter-actions">
+              <button class="letter-reply-btn" data-action="alfalfa">Send Alfalfa</button>
+              <button class="letter-reply-btn" data-action="apple">Send Apple</button>
+              <button class="letter-reply-btn" data-action="whinny">Send Whinny</button>
+            </div>
+          `;
+
+          entry.querySelectorAll('.letter-reply-btn').forEach(b => {
+            b.addEventListener('click', () => {
+              const act = b.getAttribute('data-action');
+              if (act === 'apple') {
+                window.horseAudio.playCrunch();
+                notify(`Sent Honeycrisp to ${c.horse.name}`);
+              } else if (act === 'alfalfa') {
+                window.horseAudio.playClipClop();
+                notify(`Sent Alfalfa to ${c.horse.name}`);
+              } else {
+                window.horseAudio.playWhinny('default');
+                notify(`Whinnied across the paddock to ${c.horse.name}`);
+              }
+            });
+          });
+
+          correspondenceList.appendChild(entry);
+        });
+      }
+
+      // Modals & Navigation
+      function setupModals() {
+        const btnLetters = document.getElementById('btnNavLetters');
+        const btnCloseLetters = document.getElementById('btnCloseLetters');
+        btnLetters.addEventListener('click', () => lettersDrawer.classList.add('open'));
+        btnCloseLetters.addEventListener('click', () => lettersDrawer.classList.remove('open'));
+
+        const btnCriteria = document.getElementById('btnNavCriteria');
+        const btnCloseCriteria = document.getElementById('btnCloseCriteria');
+        btnCriteria.addEventListener('click', () => criteriaModal.classList.add('open'));
+        btnCloseCriteria.addEventListener('click', () => criteriaModal.classList.remove('open'));
+
+        const rangeDist = document.getElementById('rangeDistance');
+        const display = document.getElementById('radiusDisplay');
+        rangeDist.addEventListener('input', () => {
+          display.textContent = `${rangeDist.value} Miles`;
+        });
+
+        document.getElementById('btnApplyCriteria').addEventListener('click', () => {
+          criteriaModal.classList.remove('open');
+          buildDeck();
+          notify('Criteria Applied');
+        });
+      }
+
+      function checkAgeVerification() {
+        const modal = document.getElementById('ageGateModal');
+        if (!modal) return;
+        const verified = localStorage.getItem('equus_age_verified');
+        if (verified === 'true') {
+          modal.classList.remove('open');
+          return;
+        }
+
+        modal.classList.add('open');
+        const select = document.getElementById('selectBirthYear');
+        const err = document.getElementById('ageGateError');
+        const currentYear = new Date().getFullYear();
+
+        if (select && select.children.length <= 1) {
+          for (let y = currentYear - 1; y >= currentYear - 100; y--) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            select.appendChild(opt);
+          }
+        }
+
+        document.getElementById('btnConfirmAge').addEventListener('click', () => {
+          const year = parseInt(select.value, 10);
+          if (!year) {
+            err.textContent = 'Please select your birth year to verify your age.';
+            err.style.display = 'block';
+            return;
+          }
+          const age = currentYear - year;
+          if (age < 18) {
+            err.textContent = 'Access Denied: You must be at least 18 years old to enter the EQUUS registry.';
+            err.style.display = 'block';
+            return;
+          }
+          localStorage.setItem('equus_age_verified', 'true');
+          modal.classList.remove('open');
+          notify('Age Verified (18+)');
+        });
+
+        document.getElementById('btnExitUnder18').addEventListener('click', () => {
+          window.location.href = 'https://www.google.com';
+        });
+      }
+
+      function setupAudioToggle() {
+        const btn = document.getElementById('btnNavAudio');
+        btn.addEventListener('click', () => {
+          const muted = window.horseAudio.toggleMute();
+          btn.textContent = muted ? 'Audio: Off' : 'Audio: On';
+          if (!muted) window.horseAudio.playClipClop();
+          notify(muted ? 'Audio Muted' : 'Audio Active');
+        });
+      }
+
+      function setupKeyboard() {
+        window.addEventListener('keydown', (e) => {
+          if (lettersDrawer.classList.contains('open') || criteriaModal.classList.contains('open')) return;
+          if (e.key === 'ArrowLeft') document.getElementById('btnPass').click();
+          else if (e.key === 'ArrowRight') document.getElementById('btnConnect').click();
+          else if (e.key === ' ' || e.key === 'Spacebar') {
+            e.preventDefault();
+            document.getElementById('btnPlayVocal').click();
+          }
+        });
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>

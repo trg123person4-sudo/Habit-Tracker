@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyOS64 — Interactive Virtual Machine & Shell</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --cyan: #38d3f8;
+      --green: #4ade80;
+      --yellow: #facc15;
+      --red: #f87171;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      margin: 0 0 8px 0;
+      font-size: 26px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .badge {
+      font-size: 12px;
+      padding: 4px 8px;
+      background: #238636;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .monitor-frame {
+      background: #1e1e1e;
+      border: 3px solid #3c3c3c;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(56, 211, 248, 0.15);
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .monitor-screen {
+      background: #000;
+      border: 1px solid #111;
+      border-radius: 6px;
+      padding: 16px;
+      height: 480px;
+      overflow-y: auto;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 15px;
+      line-height: 1.35;
+      color: #aaa;
+      white-space: pre-wrap;
+      word-break: break-all;
+      cursor: text;
+    }
+
+    .monitor-screen::-webkit-scrollbar {
+      width: 8px;
+    }
+    .monitor-screen::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 4px;
+    }
+
+    .c-black   { color: #000000; }
+    .c-blue    { color: #3b82f6; }
+    .c-green   { color: #22c55e; }
+    .c-cyan    { color: #06b6d4; }
+    .c-red     { color: #ef4444; }
+    .c-magenta { color: #d946ef; }
+    .c-yellow  { color: #eab308; }
+    .c-white   { color: #ffffff; }
+    .c-gray    { color: #9ca3af; }
+    .c-dgray   { color: #6b7280; }
+    .c-lgreen  { color: #4ade80; }
+    .c-lcyan   { color: #38d3f8; }
+    .c-lred    { color: #f87171; }
+
+    .input-line {
+      display: inline;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 9px;
+      height: 16px;
+      background: #fff;
+      vertical-align: middle;
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .control-panel {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .btn {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn:hover {
+      background: #21262d;
+      border-color: #8b949e;
+    }
+    .btn-primary {
+      background: #238636;
+      border-color: #2ea043;
+    }
+    .btn-primary:hover {
+      background: #2ea043;
+    }
+
+    .footer-bar {
+      margin-top: 15px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--cyan);
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    /* Mobile keyboard helper */
+    #hidden-input {
+      position: absolute;
+      opacity: 0;
+      top: -9999px;
+      left: -9999px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>MyOS64 Virtual Machine <span class="badge">x86_64 Long Mode</span></h1>
+    <p style="margin:0; color:#8b949e; font-size:14px;">Direct Virtual Screen & Keyboard Simulator (Click inside monitor to type)</p>
+  </div>
+
+  <div class="monitor-frame">
+    <div class="monitor-screen" id="screen" onclick="focusInput()"></div>
+  </div>
+
+  <div class="footer-bar">
+    <span id="uptime-display">>> Uptime: 0s | PIT Ticks: 0</span>
+    <span id="heap-display">Heap Free: 1023 KiB / 1024 KiB</span>
+  </div>
+
+  <div class="control-panel">
+    <button class="btn btn-primary" onclick="sendCmd('help')">help</button>
+    <button class="btn" onclick="sendCmd('about')">about</button>
+    <button class="btn" onclick="sendCmd('meminfo')">meminfo</button>
+    <button class="btn" onclick="sendCmd('ps')">ps</button>
+    <button class="btn" onclick="sendCmd('spawn')">spawn</button>
+    <button class="btn" onclick="sendCmd('ring3')">ring3 (User Mode)</button>
+    <button class="btn" onclick="sendCmd('alloc 4096')">alloc 4096</button>
+    <button class="btn" onclick="sendCmd('time')">time</button>
+    <button class="btn" onclick="sendCmd('panic')" style="color:var(--red);">panic</button>
+    <button class="btn" onclick="sendCmd('clear')">clear</button>
+  </div>
+
+  <input type="text" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+
+  <script>
+    const screen = document.getElementById("screen");
+    const hiddenInput = document.getElementById("hidden-input");
+    const uptimeDisplay = document.getElementById("uptime-display");
+    const heapDisplay = document.getElementById("heap-display");
+
+    let buffer = "";
+    let currentInput = "";
+    let ticks = 0;
+    let seconds = 0;
+    let heapAllocated = 1;
+    let heapTotal = 1024;
+    let tasks = [
+      { pid: 1, name: "kernel_shell", state: "RUNNING" }
+    ];
+
+    function writeRaw(html) {
+      buffer += html;
+      render();
+    }
+
+    function render() {
+      screen.innerHTML = buffer + 
+        '<span class="c-lgreen">myos64</span><span class="c-lcyan">> </span>' + 
+        escapeHtml(currentInput) + 
+        '<span class="cursor"></span>';
+      screen.scrollTop = screen.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function boot() {
+      buffer = "";
+      currentInput = "";
+      ticks = 0;
+      seconds = 0;
+
+      writeRaw('<span class="c-cyan">================================================================================</span>\n');
+      writeRaw('<span class="c-white">         MyOS64 -- Phase 5: Preemptive Multitasking, Ring 3 & System Calls      </span>\n');
+      writeRaw('<span class="c-cyan">================================================================================</span>\n');
+      writeRaw('<span class="c-lgreen">[ OK ] </span>CPU Tables: GDT64, TSS (IST1), IDT64 (256 gates), PIC &amp; PIT 100 Hz\n');
+      writeRaw('<span class="c-lgreen">[ OK ] </span>Memory: PMM (125/128 MiB free) | VMM (4-Level Paging) | Heap (1 MiB dynamic pool)\n');
+      writeRaw('<span class="c-lgreen">[ OK ] </span>Drivers: PS/2 Keyboard (IRQ 1 ring buffer) &amp; COM1 Serial (115200 8N1)\n');
+      writeRaw('<span class="c-lgreen">[ OK ] </span>Multitasking: Preemptive Round-Robin Scheduler &amp; SYSCALL/SYSRET MSRs\n');
+      writeRaw('<span class="c-lgreen">[ OK ] </span><span class="c-yellow">Hardware Interrupts ENABLED (EFLAGS.IF = 1)</span>\n');
+      writeRaw('<span class="c-dgray">--------------------------------------------------------------------------------</span>\n');
+      writeRaw('<span class="c-white">Type \'help\' for commands, \'ps\' for process tree, or \'spawn\'/\'ring3\' for demos.</span>\n\n');
+    }
+
+    function executeCommand(cmd) {
+      writeRaw('<span class="c-lgreen">myos64</span><span class="c-lcyan">> </span>' + escapeHtml(cmd) + '\n');
+      const parts = cmd.trim().split(/\s+/);
+      const action = parts[0].toLowerCase();
+
+      if (action === "") {
+        return;
+      }
+
+      if (action === "help") {
+        writeRaw('<span class="c-yellow">\n  Available MyOS64 Commands:\n</span>');
+        writeRaw('  -----------------------------------------------------------------\n');
+        writeRaw('  help             - Display this command manual\n');
+        writeRaw('  clear            - Clear the VGA text console\n');
+        writeRaw('  about            - Display OS architecture & build specifications\n');
+        writeRaw('  meminfo          - Display physical & heap memory telemetry\n');
+        writeRaw('  alloc &lt;bytes&gt;    - Dynamically allocate memory block from kernel heap\n');
+        writeRaw('  free &lt;hex_ptr&gt;   - Deallocate memory block and coalesce heap\n');
+        writeRaw('  echo &lt;text&gt;      - Echo arguments to console and serial port\n');
+        writeRaw('  time             - Display uptime and PIT timer ticks\n');
+        writeRaw('  ps               - List all active processes and scheduler threads\n');
+        writeRaw('  spawn            - Spawn concurrent background worker tasks\n');
+        writeRaw('  ring3            - Execute a Ring 3 user mode task with SYSCALL test\n');
+        writeRaw('  panic            - Test fatal division-by-zero CPU exception (#DE)\n');
+        writeRaw('  reboot           - Trigger hardware system reboot\n\n');
+
+      } else if (action === "clear") {
+        buffer = "";
+
+      } else if (action === "about") {
+        writeRaw('\n<span class="c-lcyan">  ===============================================================\n</span>');
+        writeRaw('<span class="c-white">                     MyOS64 Operating System                     \n</span>');
+        writeRaw('<span class="c-lcyan">  ===============================================================\n</span>');
+        writeRaw('  Architecture: x86_64 (AMD64) Long Mode with 4-Level Paging (PML4)\n');
+        writeRaw('  Bootloader  : Dual Multiboot1 / Multiboot2 Compliant\n');
+        writeRaw('  CPU Tables  : 64-Bit GDT with TSS (IST1 emergency stack) & IDT (256 gates)\n');
+        writeRaw('  Interrupts  : Remapped 8259 PIC (vectors 32-47) + 100 Hz 8254 PIT\n');
+        writeRaw('  Memory      : Bitmap PMM + 4-Level Paging VMM + Dynamic Heap (kmalloc)\n');
+        writeRaw('  Drivers     : VGA Text (0xB8000), PS/2 Keyboard (IRQ 1), COM1 (115200 8N1)\n');
+        writeRaw('  Multitasking: Preemptive Round-Robin Scheduler + Ring 3 SYSCALL/SYSRET\n\n');
+
+      } else if (action === "meminfo") {
+        writeRaw('\n<span class="c-lcyan">--- Physical Memory (PMM) ---\n</span>');
+        writeRaw('  Total RAM : 128 MiB\n  Used RAM  : 3 MiB\n  Free RAM  : 125 MiB\n');
+        writeRaw('<span class="c-lcyan">--- Kernel Heap (VMM) ---\n</span>');
+        writeRaw('  Allocated : ' + heapAllocated + ' KiB\n');
+        writeRaw('  Available : ' + (heapTotal - heapAllocated) + ' KiB\n\n');
+
+      } else if (action === "alloc") {
+        const bytes = parseInt(parts[1]) || 1024;
+        const kb = Math.ceil(bytes / 1024);
+        heapAllocated += kb;
+        const addr = "0x" + (0x40000010 + Math.floor(Math.random() * 0xFFFFF)).toString(16);
+        writeRaw('<span class="c-lgreen">Allocated ' + bytes + ' bytes at virtual address: ' + addr + '</span>\n');
+
+      } else if (action === "free") {
+        const addr = parts[1] || "0x40000010";
+        if (heapAllocated > 1) heapAllocated = Math.max(1, heapAllocated - 1);
+        writeRaw('<span class="c-lgreen">Deallocated block at: ' + addr + ' (Adjacent free blocks coalesced)</span>\n');
+
+      } else if (action === "echo") {
+        writeRaw('\n' + escapeHtml(parts.slice(1).join(" ")) + '\n\n');
+
+      } else if (action === "time") {
+        writeRaw('\n  System Uptime : ' + seconds + ' seconds\n  PIT IRQ Ticks : ' + ticks + '\n\n');
+
+      } else if (action === "ps") {
+        writeRaw('<span class="c-yellow">\n  PID   STATE       NAME\n</span>');
+        writeRaw('  -----------------------------------------\n');
+        tasks.forEach(t => {
+          let stateColor = t.state === "RUNNING" ? "c-lgreen" : (t.state === "READY" ? "c-lcyan" : "c-dgray");
+          writeRaw('  ' + t.pid + '     <span class="' + stateColor + '">' + t.state.padEnd(12, ' ') + '</span>' + t.name + '\n');
+        });
+        writeRaw('\n');
+
+      } else if (action === "spawn") {
+        writeRaw('<span class="c-lcyan">Spawning concurrent kernel background worker tasks...\n</span>');
+        const pidA = tasks.length + 1;
+        const pidB = tasks.length + 2;
+        tasks.push({ pid: pidA, name: "WorkerA", state: "READY" });
+        tasks.push({ pid: pidB, name: "WorkerB", state: "READY" });
+        writeRaw('<span class="c-lgreen">[ OK ] Spawned WorkerA (PID ' + pidA + ') and WorkerB (PID ' + pidB + ')\n</span>');
+        writeRaw('Workers are now time-slicing via timer preemption. Monitor output arriving concurrently:\n');
+        writeRaw('[WorkerA PID ' + pidA + '] Progress step 1/5 executing concurrently\n');
+        writeRaw('[WorkerB PID ' + pidB + '] Progress step 1/5 executing concurrently\n');
+
+      } else if (action === "ring3") {
+        writeRaw('<span class="c-lcyan">Creating Ring 3 user mode task and adding to scheduler...\n</span>');
+        const userPid = tasks.length + 1;
+        tasks.push({ pid: userPid, name: "user_demo", state: "RUNNING" });
+        writeRaw('<span class="c-lgreen">[ OK ] Ring 3 User Task created (PID ' + userPid + '). Switching into unprivileged user mode via iretq...\n</span>');
+        writeRaw('<span class="c-yellow">\n>>> [Ring 3 User Mode] Hello! Executing unprivileged instructions.\n</span>');
+        writeRaw('>>> [Ring 3 User Mode] Invoking SYS_GETPID via SYSCALL instruction...\n');
+        writeRaw('>>> [Ring 3 User Mode] My PID is: ' + userPid + '\n');
+        writeRaw('>>> [Ring 3 User Mode] Calling SYS_EXIT to terminate user thread.\n\n');
+        tasks[tasks.length - 1].state = "TERMINATED";
+
+      } else if (action === "panic") {
+        writeRaw('<span class="c-lred">Triggering intentional Division-by-Zero CPU Exception (#DE)...\n</span>');
+        writeRaw('\n<span class="c-white" style="background:#ef4444; padding:2px 4px;">================================================================================</span>\n');
+        writeRaw('<span class="c-white" style="background:#ef4444; padding:2px 4px;">                     FATAL CPU EXCEPTION OCCURRED                               </span>\n');
+        writeRaw('<span class="c-white" style="background:#ef4444; padding:2px 4px;">================================================================================</span>\n');
+        writeRaw('Exception : <span class="c-yellow">Division By Zero (#DE)</span>  Vector: 0  Error Code: 0x0\n');
+        writeRaw('<span class="c-lcyan">--- Architectural Registers ---\n</span>');
+        writeRaw('RIP: 0x00000000001004C2  CS : 0x0008  RFLAGS: 0x0000000000000202\n');
+        writeRaw('RSP: 0x0000000000104E90  SS : 0x0010  RBP   : 0x0000000000104EA0\n');
+        writeRaw('RAX: 0x000000000000002A  RBX: 0x0000000000000000  RCX   : 0x0000000000000000\n');
+        writeRaw('<span class="c-lred">System halted permanently. (Click reboot or type reboot to restart)</span>\n\n');
+
+      } else if (action === "reboot") {
+        writeRaw('<span class="c-yellow">Rebooting virtual machine...\n</span>');
+        setTimeout(boot, 800);
+        return;
+
+      } else {
+        writeRaw('<span class="c-lred">Unknown command: \'' + escapeHtml(parts[0]) + '\'. Type \'help\' for available commands.\n</span>');
+      }
+    }
+
+    function sendCmd(cmd) {
+      executeCommand(cmd);
+      currentInput = "";
+      render();
+    }
+
+    function focusInput() {
+      hiddenInput.focus();
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        executeCommand(currentInput);
+        currentInput = "";
+        render();
+      } else if (e.key === "Backspace") {
+        if (currentInput.length > 0) {
+          currentInput = currentInput.slice(0, -1);
+          render();
+        }
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        currentInput += e.key;
+        render();
+      }
+    });
+
+    hiddenInput.addEventListener("input", (e) => {
+      currentInput += hiddenInput.value;
+      hiddenInput.value = "";
+      render();
+    });
+
+    // Simulated 100 Hz PIT Timer
+    setInterval(() => {
+      ticks++;
+      if (ticks % 100 === 0) {
+        seconds++;
+        uptimeDisplay.innerText = ">> Uptime: " + seconds + "s | PIT Ticks: " + ticks;
+        heapDisplay.innerText = "Heap Free: " + (heapTotal - heapAllocated) + " KiB / 1024 KiB";
+      }
+    }, 10);
+
+    // Initial Boot
+    boot();
+  </script>
+</body>
+</html>
