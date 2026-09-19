@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NudgePoint — Classroom Pulse & Comprehension Radar</title>
+
+  <!-- Cache prevention for local development -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- Google Fonts: Playfair Display, Cormorant Garamond, Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- File Protocol Detection Banner -->
+  <script>
+    if (window.location.protocol === 'file:') {
+      window.addEventListener('DOMContentLoaded', function() {
+        var warn = document.createElement('div');
+        warn.style = "background:#B45309;color:#FEF3C7;padding:14px 20px;font-family:sans-serif;font-size:13px;text-align:center;line-height:1.5;box-shadow:0 4px 12px rgba(0,0,0,0.15);position:sticky;top:0;z-index:999999;border-bottom:1px solid #D97706;";
+        warn.innerHTML = "<strong>⚠️ File Protocol Detected (file://)</strong> — Modern browsers restrict external scripts over file://.<br/>Please run <code>run_server.bat</code> (or <code>python -m http.server 8080</code>) and open <a href='http://localhost:8080' style='color:#FFFBEB;text-decoration:underline;font-weight:bold;'>http://localhost:8080</a> in your browser.";
+        document.body.insertBefore(warn, document.body.firstChild);
+      });
+    }
+  </script>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gallery: {
+              bg: '#EDE8E1',
+              card: '#F7F4EE',
+              cardElevated: '#FAF8F4',
+              border: '#DDD7CB',
+              borderDark: '#C8C1B2',
+            },
+            ink: {
+              DEFAULT: '#111215',
+              soft: '#383B42',
+              muted: '#7A7E89',
+              subtle: '#A6ABB8',
+            },
+            amberGallery: {
+              DEFAULT: '#C4761E',
+              subtle: '#FDF7EE',
+              border: '#EAD1A8',
+            }
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            cormorant: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & ReactDOM (Pinned with Subresource Integrity) -->
+  <script crossorigin="anonymous" integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8" src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin="anonymous" integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh" src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script crossorigin="anonymous" integrity="sha384-wVDXnilITixWtkFWH+Xu4zp0L3R7zd39Il4szMJlz9M3Vhsuerfbxy5ojdJdqOEX" src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+
+  <!-- Canvas Confetti (Pinned with Subresource Integrity) -->
+  <script crossorigin="anonymous" integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k" src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- QR Code Generator CDN (Pinned with Subresource Integrity) -->
+  <script crossorigin="anonymous" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Custom Styles (with cache-busting) -->
+  <link rel="stylesheet" href="styles.css?v=4.0" />
+</head>
+<body class="bg-[#EDE8E1] text-[#1A1B1F] min-h-screen selection:bg-neutral-900 selection:text-white relative overflow-x-hidden">
+  <div id="root"></div>
+
+  <!-- Main Application Script (with cache-busting) -->
+  <script type="text/babel" src="nudgepoint.jsx?v=4.0"></script>
+</body>
+</html>

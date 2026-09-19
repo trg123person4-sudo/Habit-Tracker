@@ -1,0 +1,834 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-cormorant: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Muted, Anti-Glare Dull White & Alabaster Palette */
+  --bg-canvas: #EDE8E1;
+  --bg-surface: #F6F3ED;
+  --bg-card: #F7F4EE;
+  --border-subtle: #DDD7CB;
+  --border-dark: #C8C1B2;
+
+  --text-ink: #111215;
+  --text-soft: #424650;
+  --text-muted: #7E828E;
+
+  --accent-amber: #C4761E;
+  --accent-amber-glow: rgba(196, 118, 30, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ============================================================
+   KEYBOARD NAVIGATION — Focus-visible ring (WCAG 2.1 AA)
+   Only shows on keyboard focus, not on mouse click.
+   Applies to all interactive elements: buttons, inputs, links,
+   and elements with tabIndex / role="button".
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Pill buttons need a rounder focus ring to match their shape */
+.btn-gallery-pill-black:focus-visible,
+.btn-gallery-pill-outline:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 3px;
+  border-radius: 9999px;
+}
+
+/* Gallery nav buttons: underline + ring combo */
+.gallery-nav-btn:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Hall seat cards (student chips): rounded focus ring */
+.hall-seat-card:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 2px;
+}
+
+
+body {
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-canvas);
+  color: var(--text-ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle Architectural Grid Backdrop on Dull White */
+.gallery-grid-backdrop {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(20, 20, 25, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 20, 25, 0.04) 1px, transparent 1px);
+  background-size: 38px 38px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ethereal Pastel Lighting Auras Blended with Dull Chalk */
+.gallery-lighting-aurora {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: 
+    radial-gradient(ellipse at 10% 8%, rgba(245, 218, 224, 0.35) 0%, transparent 45%),
+    radial-gradient(ellipse at 90% 12%, rgba(248, 238, 215, 0.4) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 60%, rgba(244, 239, 232, 0.6) 0%, transparent 60%);
+}
+
+/* Atmospheric Floating Background Frames: Low Opacity, Strictly Under Content */
+.tilted-gallery-card {
+  position: absolute;
+  background: rgba(247, 244, 238, 0.35);
+  border: 1px solid rgba(205, 198, 185, 0.3);
+  box-shadow: 0 16px 36px -12px rgba(35, 30, 20, 0.03);
+  pointer-events: none !important;
+  z-index: 0 !important;
+  opacity: 0.35;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Gallery Glassmorphism Header */
+.gallery-header {
+  background: rgba(237, 232, 225, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(221, 215, 203, 0.85);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* Top Navigation Buttons */
+.gallery-nav-btn {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.gallery-nav-btn:hover {
+  color: var(--text-ink);
+}
+
+.gallery-nav-btn.active {
+  color: var(--text-ink);
+  font-weight: 700;
+  border-bottom: 2px solid var(--text-ink);
+}
+
+/* Pill Buttons */
+.btn-gallery-pill-black {
+  background-color: #111215;
+  color: #EDE8E1;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 12px 28px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(17, 18, 21, 0.15);
+  border: 1px solid #111215;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-gallery-pill-black:hover {
+  background-color: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(17, 18, 21, 0.22);
+}
+
+.btn-gallery-pill-black:active {
+  transform: translateY(0);
+}
+
+.btn-gallery-pill-outline {
+  background-color: #F1EDE6;
+  color: #111215;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 12px 28px;
+  border: 1px solid #CBC4B5;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(35, 30, 20, 0.03);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-gallery-pill-outline:hover {
+  background-color: #F8F6F1;
+  border-color: #111215;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(35, 30, 20, 0.07);
+}
+
+
+/* Dull White Museum Exhibition Card */
+.gallery-panel {
+  background: #F7F4EE;
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  box-shadow: 0 2px 4px rgba(35, 30, 20, 0.02), 0 12px 36px rgba(35, 30, 20, 0.04);
+  position: relative;
+  z-index: 10;
+}
+
+/* Amber Pulse Gallery Illumination */
+@keyframes galleryAmberIllumination {
+  0%, 100% {
+    border-color: rgba(196, 118, 30, 0.35);
+    background-color: #F7F4EE;
+    box-shadow: 0 0 0 1px rgba(196, 118, 30, 0.15), 0 8px 30px rgba(196, 118, 30, 0.08);
+  }
+  50% {
+    border-color: rgba(196, 118, 30, 0.85);
+    background-color: #FBF6EC;
+    box-shadow: 0 0 0 4px rgba(196, 118, 30, 0.22), 0 16px 45px rgba(196, 118, 30, 0.16);
+  }
+}
+
+.amber-pulse-active {
+  animation: galleryAmberIllumination 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Tactile Sculptural Student Push Button */
+.btn-student-sculpted {
+  width: 170px;
+  height: 170px;
+  border-radius: 9999px;
+  background: #F8F5EF;
+  border: 1.5px solid #CBC4B5;
+  box-shadow: 0 8px 24px rgba(35, 30, 20, 0.06), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  color: #111215;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  cursor: pointer;
+}
+
+.btn-student-sculpted:hover {
+  border-color: #111215;
+  background: #FCFAF6;
+  transform: scale(1.02);
+  box-shadow: 0 12px 32px rgba(35, 30, 20, 0.09);
+}
+
+.btn-student-sculpted.is-lost {
+  background: #111215;
+  color: #EDE8E1;
+  border-color: #111215;
+  box-shadow: 0 12px 36px rgba(17, 18, 21, 0.25);
+}
+
+/* Nuance Tag Pills & Grid */
+.nuance-tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.gallery-nuance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  font-family: var(--font-sans);
+  border: 1px solid var(--border-subtle);
+  background: #F1EDE5;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(35, 30, 20, 0.03);
+}
+
+.gallery-nuance-pill:hover {
+  border-color: #111215;
+  color: #111215;
+  background: #F8F5EF;
+  transform: translateY(-1px);
+}
+
+.gallery-nuance-pill.active {
+  background: #F5ECE0;
+  border-color: #C4761E;
+  color: #9A5B0F;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(196, 118, 30, 0.12);
+}
+
+/* Sub-Navigation Tabs */
+.subnav-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.subnav-tab-btn {
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: #F1EDE5;
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.subnav-tab-btn:hover {
+  color: var(--text-ink);
+  border-color: var(--text-ink);
+  background: #F8F5EF;
+}
+
+.subnav-tab-btn.active {
+  background: #111215;
+  color: #EDE8E1;
+  border-color: #111215;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(17, 18, 21, 0.15);
+}
+
+/* Lecture Milestones List */
+.milestone-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.milestone-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: #FAF8F4;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.milestone-item:hover {
+  border-color: var(--text-ink);
+  background: #FFFDF9;
+}
+
+.milestone-item.active {
+  border-color: var(--accent-amber);
+  background: #F8F1E5;
+  box-shadow: 0 2px 8px rgba(196, 118, 30, 0.08);
+}
+
+.milestone-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 55px;
+  display: inline-block;
+}
+
+.milestone-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-ink);
+}
+
+.milestone-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-amber);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   35-STUDENT LECTURE HALL FLIGHT SIMULATOR (IMMERSIVE AMPHITHEATER RADAR)
+   ========================================================================== */
+
+/* Lectern Stage at Front of Hall */
+.hall-stage-lectern {
+  background: #111215;
+  color: #EDE8E1;
+  border-radius: 16px;
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 6px 20px rgba(17, 18, 21, 0.18);
+  border: 1px solid #23252B;
+  margin-bottom: 20px;
+}
+
+.hall-telemetry-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #DDD7CB;
+}
+
+/* Scenario Action Dock */
+.hall-scenario-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.hall-scenario-btn {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hall-scenario-btn.primary {
+  background: #111215;
+  color: #EDE8E1;
+  border: 1px solid #111215;
+}
+.hall-scenario-btn.primary:hover {
+  background: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(17, 18, 21, 0.2);
+}
+
+.hall-scenario-btn.amber {
+  background: #C4761E;
+  color: #FFFFFF;
+  border: 1px solid #B06514;
+}
+.hall-scenario-btn.amber:hover {
+  background: #B06514;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(196, 118, 30, 0.35);
+}
+
+.hall-scenario-btn.outline {
+  background: #FAF8F4;
+  color: #111215;
+  border: 1px solid var(--border-subtle);
+}
+.hall-scenario-btn.outline:hover {
+  background: #FFFFFF;
+  border-color: #111215;
+  transform: translateY(-1px);
+}
+
+.hall-scenario-btn.reset {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+}
+.hall-scenario-btn.reset:hover {
+  color: #B91C1C;
+  border-color: rgba(185, 28, 28, 0.2);
+  background: rgba(185, 28, 28, 0.05);
+}
+
+/* Filter Toolbar */
+.hall-filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hall-filter-btn {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  color: var(--text-muted);
+  background: #F1EDE5;
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.hall-filter-btn:hover {
+  color: var(--text-ink);
+  border-color: var(--text-ink);
+}
+.hall-filter-btn.active {
+  background: #111215;
+  color: #EDE8E1;
+  border-color: #111215;
+  font-weight: 600;
+}
+
+/* Amphitheater Tier Rows */
+.hall-amphitheater {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hall-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(250, 248, 244, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: background 0.2s ease;
+}
+.hall-row:hover {
+  background: rgba(255, 253, 249, 0.95);
+}
+
+.hall-row-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #DDD7CB;
+}
+
+.hall-row-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-ink);
+}
+
+.hall-row-desc {
+  font-family: var(--font-cormorant);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-soft);
+}
+
+.hall-row-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #EDE8E1;
+  color: var(--text-soft);
+}
+.hall-row-count.has-lost {
+  background: #FDF1EA;
+  color: #B25828;
+  font-weight: 700;
+  border: 1px solid #EAD1A8;
+}
+
+.hall-row-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 1024px) {
+  .hall-row-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
+
+/* Individual Student Desk / Seat Card */
+.hall-seat-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 114px;
+  padding: 8px 9px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: #FAF8F4;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  text-align: left;
+}
+
+.hall-seat-card:hover {
+  border-color: var(--text-ink);
+  background: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(17, 18, 21, 0.08);
+}
+
+.hall-seat-card.is-lost {
+  background: #FDF7EE;
+  border-color: var(--accent-amber);
+  box-shadow: 0 4px 14px rgba(196, 118, 30, 0.22);
+}
+
+@keyframes amberPulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 118, 30, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(196, 118, 30, 0); }
+}
+
+.hall-seat-card.is-lost .hall-seat-status-beacon {
+  animation: amberPulseGlow 1.8s infinite;
+}
+
+.hall-seat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.hall-seat-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #EBE6DC;
+  color: var(--text-ink);
+}
+
+.hall-seat-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.hall-seat-status.flow {
+  color: #2F7A50;
+  font-weight: 600;
+}
+.hall-seat-status.lost {
+  color: #B45309;
+  font-weight: 700;
+}
+
+.hall-seat-status-beacon {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+.hall-seat-status.flow .hall-seat-status-beacon {
+  background: #2F7A50;
+}
+.hall-seat-status.lost .hall-seat-status-beacon {
+  background: #C4761E;
+}
+
+.hall-seat-middle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.hall-seat-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.hall-seat-avatar.shy {
+  background: #FDF1EA;
+  color: #B25828;
+  border-color: #EAD1A8;
+}
+.hall-seat-avatar.note {
+  background: #EEF4F8;
+  color: #3B7293;
+  border-color: #C6D8E4;
+}
+.hall-seat-avatar.flow {
+  background: #EDF7F1;
+  color: #2F7A50;
+  border-color: #BFDEC9;
+}
+
+.hall-seat-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+
+/* Micro-Monologue Thought Bubble */
+.hall-seat-thought {
+  font-family: var(--font-cormorant);
+  font-size: 11px;
+  font-style: italic;
+  color: #575B66;
+  line-height: 1.15;
+  background: #FAF6ED;
+  border: 1px solid #EADDC9;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hall-seat-card.is-lost .hall-seat-thought {
+  background: #FDF2E2;
+  border-color: #E6C79A;
+  color: #78350F;
+  font-weight: 500;
+}
+
+/* Student Persona Micro-Badge */
+.student-chip-persona {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hall-seat-card.is-lost .student-chip-persona {
+  color: var(--accent-amber);
+  font-weight: 600;
+}
+
+
+/* Persona Badges */
+.persona-badge-shy {
+  background: #FDF1EA;
+  color: #B25828;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 8px;
+}
+
+.persona-badge-note {
+  background: #EEF4F8;
+  color: #3B7293;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 8px;
+}
+
+.persona-badge-flow {
+  background: #EDF7F1;
+  color: #2F7A50;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 8px;
+}
+
+/* Tabular Numerals */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Minimalist Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(126, 130, 142, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(126, 130, 142, 0.45);
+}
