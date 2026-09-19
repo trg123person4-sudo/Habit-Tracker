@@ -4,6 +4,7 @@
   "description": "The Zero-Login Classroom Pulse & Comprehension Radar",
   "main": "server.py",
   "scripts": {
+    "build": "echo 'Static build ready'",
     "start": "python server.py",
     "start:lan": "python server.py --lan",
     "test": "python -m unittest discover tests",
