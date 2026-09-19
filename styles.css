@@ -34,6 +34,40 @@ button {
   padding: 0;
 }
 
+/* ============================================================
+   KEYBOARD NAVIGATION — Focus-visible ring (WCAG 2.1 AA)
+   Only shows on keyboard focus, not on mouse click.
+   Applies to all interactive elements: buttons, inputs, links,
+   and elements with tabIndex / role="button".
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Pill buttons need a rounder focus ring to match their shape */
+.btn-gallery-pill-black:focus-visible,
+.btn-gallery-pill-outline:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 3px;
+  border-radius: 9999px;
+}
+
+/* Gallery nav buttons: underline + ring combo */
+.gallery-nav-btn:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Hall seat cards (student chips): rounded focus ring */
+.hall-seat-card:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 2px;
+}
+
+
 body {
   font-family: var(--font-sans);
   margin: 0;
@@ -169,27 +203,6 @@ body {
   box-shadow: 0 4px 12px rgba(35, 30, 20, 0.07);
 }
 
-/* Reset Pill */
-.sim-btn-reset {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--text-muted);
-  border: 1px solid var(--border-subtle);
-  border-radius: 9999px;
-  padding: 8px 16px;
-  background: #F1EDE5;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-}
-
-.sim-btn-reset:hover {
-  color: var(--text-ink);
-  border-color: var(--text-ink);
-  background: #F8F5EF;
-}
 
 /* Dull White Museum Exhibition Card */
 .gallery-panel {
@@ -733,12 +746,6 @@ body {
   display: block;
 }
 
-.hall-seat-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 2px;
-}
 
 /* Micro-Monologue Thought Bubble */
 .hall-seat-thought {
@@ -765,43 +772,7 @@ body {
   font-weight: 500;
 }
 
-/* Legacy & Shared Simulator Chip Styles (Backward Compatibility) */
-.student-chip-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 8px;
-  padding-top: 12px;
-}
-
-.student-chip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-  background: #FAF8F4;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.18s ease;
-  position: relative;
-}
-
-.student-chip.is-lost {
-  background: #FDF6EB;
-  border-color: var(--accent-amber);
-  box-shadow: 0 2px 8px rgba(196, 118, 30, 0.12);
-}
-
-.student-chip-name {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
+/* Student Persona Micro-Badge */
 .student-chip-persona {
   font-size: 9px;
   font-family: var(--font-mono);
@@ -810,24 +781,11 @@ body {
   color: var(--text-muted);
 }
 
-.student-chip.is-lost .student-chip-persona {
+.hall-seat-card.is-lost .student-chip-persona {
   color: var(--accent-amber);
   font-weight: 600;
 }
 
-.student-chip-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  background: #D5D0C5;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.student-chip.is-lost .student-chip-indicator {
-  background: var(--accent-amber);
-  box-shadow: 0 0 6px rgba(196, 118, 30, 0.6);
-}
 
 /* Persona Badges */
 .persona-badge-shy {

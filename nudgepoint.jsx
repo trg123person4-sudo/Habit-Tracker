@@ -3,7 +3,7 @@
 // Inspired by High-Contrast Editorial Typography, Architectural Grids, & Pastel Auras
 // ============================================================================
 
-const { useState, useEffect, useMemo, useRef, useCallback } = React;
+const { useState, useEffect, useMemo, useRef } = React;
 
 // ----------------------------------------------------------------------------
 // 1. RESTRAINED ACOUSTIC SYNTHESIS (Web Audio API)
@@ -51,7 +51,9 @@ class MinimalAcousticEngine {
         osc.start(start);
         osc.stop(start + 0.65);
       });
-    } catch (e) {}
+    } catch (e) {
+      // Best-effort audio playback; silently ignore browser autoplay policy restrictions before user gesture
+    }
   }
 
   playTap() {
@@ -74,7 +76,9 @@ class MinimalAcousticEngine {
       gain.connect(this.ctx.destination);
       osc.start(t);
       osc.stop(t + 0.05);
-    } catch (e) {}
+    } catch (e) {
+      // Best-effort audio playback; silently ignore browser autoplay policy restrictions before user gesture
+    }
   }
 
   playResolve() {
@@ -97,7 +101,9 @@ class MinimalAcousticEngine {
         osc.start(s);
         osc.stop(s + 0.5);
       });
-    } catch (e) {}
+    } catch (e) {
+      // Best-effort audio playback; silently ignore browser autoplay policy restrictions before user gesture
+    }
   }
 }
 
@@ -243,21 +249,1281 @@ function getOrCreateStudentToken() {
 }
 
 // ----------------------------------------------------------------------------
+// 2B. RBAC AUTHENTICATION & DEMO SWITCHER MODAL
+// ----------------------------------------------------------------------------
+function AuthModal({ isOpen, onClose, onLogin, onSignup, currentUser, onLogout }) {
+  const [activeTab, setActiveTab] = useState('demo'); // 'demo' | 'login' | 'signup'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState('student');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [successNotice, setSuccessNotice] = useState('');
+
+  if (!isOpen) return null;
+
+  const handlePresetSelect = async (presetEmail, presetPass, presetName, presetRole) => {
+    setError('');
+    setLoading(true);
+    const res = await onLogin(presetEmail, presetPass);
+    if (!res.success) {
+      // Fallback: register preset if account does not exist
+      const sRes = await onSignup(presetEmail, presetPass, presetName, presetRole);
+      if (!sRes.success) {
+        setError(res.error || sRes.error);
+        setLoading(false);
+        return;
+      }
+    }
+    setLoading(false);
+    onClose();
+  };
+
+  const handleSubmitLogin = async (e) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Please provide both email and password.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    const res = await onLogin(email, password);
+    setLoading(false);
+    if (!res.success) {
+      setError(res.error || 'Authentication failed.');
+    } else {
+      onClose();
+    }
+  };
+
+  const handleSubmitSignup = async (e) => {
+    e.preventDefault();
+    if (!email || !password || !fullName) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    const res = await onSignup(email, password, fullName, role);
+    setLoading(false);
+    if (!res.success) {
+      setError(res.error || 'Registration failed.');
+    } else {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-[#FAF8F4] border border-[#DDD7CB] rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-gray-400 hover:text-gray-800 text-lg w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200/50 transition"
+          aria-label="Close modal"
+        >
+          ✕
+        </button>
+
+        {/* Modal Eyebrow & Title */}
+        <div className="mb-6">
+          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#7A7E89] block mb-1">
+            ROLE-BASED ACCESS CONTROL (RBAC)
+          </span>
+          <h2 className="font-serif text-2xl sm:text-3xl text-[#111215] font-normal">
+            Identity & Authentication
+          </h2>
+          <p className="text-xs text-[#575B66] mt-1">
+            Switch between authenticated Teacher and Student profiles with verified data isolation.
+          </p>
+        </div>
+
+        {/* Current User State (if logged in) */}
+        {currentUser && (
+          <div className="mb-6 p-4 rounded-2xl bg-[#F0EDE6] border border-[#DDD7CB] flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{currentUser.role === 'teacher' ? '🧑‍🏫' : '🧑‍🎓'}</span>
+              <div>
+                <div className="text-xs font-semibold text-[#111215]">
+                  {currentUser.full_name}
+                </div>
+                <div className="text-[11px] font-mono text-[#7A7E89]">
+                  {currentUser.email} • <strong className="uppercase">{currentUser.role}</strong>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                await onLogout();
+                setSuccessNotice('Signed out successfully.');
+                setTimeout(() => setSuccessNotice(''), 2000);
+              }}
+              className="px-3 py-1 text-xs font-mono rounded-full border border-[#B91C1C] text-[#B91C1C] hover:bg-red-50 transition"
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
+
+        {/* Tab Selection */}
+        <div className="flex border-b border-[#DDD7CB] mb-6">
+          {[
+            { id: 'demo', label: '⚡ 1-Click Demo' },
+            { id: 'login', label: 'Sign In' },
+            { id: 'signup', label: 'Create Account' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setError(''); }}
+              className={`pb-2.5 px-4 text-xs font-mono uppercase tracking-wider transition border-b-2 -mb-[1px] ${
+                activeTab === tab.id
+                  ? 'border-[#111215] text-[#111215] font-bold'
+                  : 'border-transparent text-[#7A7E89] hover:text-[#111215]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Error / Success Feedback */}
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-[#FDF1EA] border border-[#EAD1A8] text-xs font-mono text-[#B91C1C]">
+            ⚠️ {error}
+          </div>
+        )}
+        {successNotice && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-800">
+            ✓ {successNotice}
+          </div>
+        )}
+
+        {/* TAB 1: 1-CLICK DEMO PRESETS */}
+        {activeTab === 'demo' && (
+          <div className="flex flex-col gap-3">
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#7A7E89] mb-1">
+              Select an official verified role preset:
+            </span>
+
+            {/* Teacher Preset Card */}
+            <button
+              disabled={loading}
+              onClick={() => handlePresetSelect('prof.euler@nudgepoint.edu', 'PodiumPass123!', 'Prof. Leonhard Euler', 'teacher')}
+              className="p-4 rounded-2xl border border-[#DDD7CB] bg-[#F7F4EE] hover:bg-[#F2ECE0] hover:border-[#111215] transition flex items-start gap-4 text-left group"
+            >
+              <span className="text-3xl p-2 rounded-xl bg-[#EDE8E1] group-hover:scale-105 transition">🧑‍🏫</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-serif text-sm font-semibold text-[#111215]">
+                    Prof. Leonhard Euler
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#111215] text-white font-medium">
+                    TEACHER
+                  </span>
+                </div>
+                <div className="text-[11px] font-mono text-[#7A7E89] mt-0.5">
+                  prof.euler@nudgepoint.edu
+                </div>
+                <p className="text-[11px] text-[#575B66] mt-1.5 leading-snug">
+                  Classroom owner for Room <strong>CALC</strong>. Unlocks real-time aggregate radar telemetry, cognitive friction breakdown, and pedagogical bridge controls.
+                </p>
+              </div>
+            </button>
+
+            {/* Student Preset Card */}
+            <button
+              disabled={loading}
+              onClick={() => handlePresetSelect('alex.rivera@nudgepoint.edu', 'StudentPass123!', 'Alex Rivera', 'student')}
+              className="p-4 rounded-2xl border border-[#DDD7CB] bg-[#F7F4EE] hover:bg-[#F2ECE0] hover:border-[#111215] transition flex items-start gap-4 text-left group"
+            >
+              <span className="text-3xl p-2 rounded-xl bg-[#EDE8E1] group-hover:scale-105 transition">🧑‍🎓</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-serif text-sm font-semibold text-[#111215]">
+                    Alex Rivera
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border border-[#DDD7CB] bg-white text-[#111215] font-medium">
+                    STUDENT
+                  </span>
+                </div>
+                <div className="text-[11px] font-mono text-[#7A7E89] mt-0.5">
+                  alex.rivera@nudgepoint.edu
+                </div>
+                <p className="text-[11px] text-[#575B66] mt-1.5 leading-snug">
+                  Enrolled student in Room <strong>CALC</strong>. Strict peer isolation guarantees signals are private and peer pulses cannot be observed or tampered with.
+                </p>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* TAB 2: SIGN IN */}
+        {activeTab === 'login' && (
+          <form onSubmit={handleSubmitLogin} className="flex flex-col gap-4">
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#7A7E89] block mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@university.edu"
+                className="w-full text-xs font-sans py-2.5 px-3.5 rounded-xl border border-[#DDD7CB] bg-[#FAF8F4] text-[#111215] focus:outline-none focus:border-[#111215]"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#7A7E89] block mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full text-xs font-sans py-2.5 px-3.5 rounded-xl border border-[#DDD7CB] bg-[#FAF8F4] text-[#111215] focus:outline-none focus:border-[#111215]"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-gallery-pill-black w-full !py-2.5 text-xs font-mono mt-2"
+            >
+              {loading ? 'AUTHENTICATING...' : 'SIGN IN'}
+            </button>
+          </form>
+        )}
+
+        {/* TAB 3: CREATE ACCOUNT */}
+        {activeTab === 'signup' && (
+          <form onSubmit={handleSubmitSignup} className="flex flex-col gap-3">
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#7A7E89] block mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="e.g. Dr. Ada Lovelace"
+                className="w-full text-xs font-sans py-2.5 px-3.5 rounded-xl border border-[#DDD7CB] bg-[#FAF8F4] text-[#111215] focus:outline-none focus:border-[#111215]"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#7A7E89] block mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ada@university.edu"
+                className="w-full text-xs font-sans py-2.5 px-3.5 rounded-xl border border-[#DDD7CB] bg-[#FAF8F4] text-[#111215] focus:outline-none focus:border-[#111215]"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#7A7E89] block mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 6 characters"
+                className="w-full text-xs font-sans py-2.5 px-3.5 rounded-xl border border-[#DDD7CB] bg-[#FAF8F4] text-[#111215] focus:outline-none focus:border-[#111215]"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#7A7E89] block mb-1">
+                Account Role
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRole('student')}
+                  className={`py-2 px-3 rounded-xl border text-xs font-mono flex items-center justify-center gap-1.5 transition ${
+                    role === 'student'
+                      ? 'bg-[#111215] text-white border-[#111215]'
+                      : 'bg-[#FAF8F4] text-[#575B66] border-[#DDD7CB] hover:border-[#111215]'
+                  }`}
+                >
+                  <span>🧑‍🎓</span>
+                  <span>Student</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('teacher')}
+                  className={`py-2 px-3 rounded-xl border text-xs font-mono flex items-center justify-center gap-1.5 transition ${
+                    role === 'teacher'
+                      ? 'bg-[#111215] text-white border-[#111215]'
+                      : 'bg-[#FAF8F4] text-[#575B66] border-[#DDD7CB] hover:border-[#111215]'
+                  }`}
+                >
+                  <span>🧑‍🏫</span>
+                  <span>Teacher</span>
+                </button>
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-gallery-pill-black w-full !py-2.5 text-xs font-mono mt-2"
+            >
+              {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT & SIGN IN'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 2C. ROLE CHOOSER LANDING SCREEN (Part B Distinct Architectural Split)
+// ----------------------------------------------------------------------------
+function LoginChooserComponent({ onSelectRole, onBack }) {
+  return (
+    <div className="min-h-screen bg-[#F3F5F4] text-[#1E262B] flex flex-col font-sans selection:bg-[#1E262B] selection:text-[#F3F5F4]">
+      {/* Clean Top Navigation Bar */}
+      <header className="border-b border-[#4B555D]/20 bg-[#F3F5F4] px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <span className="font-serif text-2xl font-bold tracking-tight text-[#1E262B]">
+            NUDGEPOINT
+          </span>
+          <button
+            onClick={onBack}
+            className="text-xs font-sans text-[#4B555D] hover:text-[#1E262B] transition py-1.5 px-3 rounded-lg border border-[#4B555D]/20 hover:border-[#1E262B] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none"
+          >
+            Return to Live Classroom
+          </button>
+        </div>
+      </header>
+
+      {/* Main Role Selection Surface */}
+      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-12 sm:py-16 flex flex-col justify-center">
+        <div className="text-center mb-10 sm:mb-12">
+          <h1 className="font-cormorant text-4xl sm:text-5xl font-medium tracking-tight text-[#1E262B] leading-tight">
+            Enter NudgePoint
+          </h1>
+          <p className="text-sm font-sans text-[#4B555D] mt-3 max-w-md mx-auto leading-relaxed">
+            Select your role to access classroom tools and telemetry.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          {/* TEACHER DOOR */}
+          <div className="bg-[#FFFFFF] border border-[#4B555D]/20 rounded-2xl p-8 flex flex-col justify-between transition hover:border-[#1E262B]">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-sans font-semibold text-[#1E262B] bg-[#F3F5F4] px-2.5 py-1 rounded-md border border-[#4B555D]/20">
+                  Instructors & Teaching Assistants
+                </span>
+                <span className="text-2xl" aria-hidden="true">🧑‍🏫</span>
+              </div>
+              <h2 className="font-cormorant text-2xl text-[#1E262B] font-medium">
+                Teacher Portal
+              </h2>
+              <p className="text-xs font-sans text-[#4B555D] mt-2 leading-relaxed">
+                Lead live sessions with ambient comprehension radar. Track student friction velocity in real time, advance milestones, and deploy targeted pedagogical bridges.
+              </p>
+              <ul className="mt-5 space-y-2 text-xs font-sans text-[#1E262B]">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1E262B]"></span>
+                  <span>Podium friction radar (90-second sliding window)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1E262B]"></span>
+                  <span>Projector question moderation & spotlighting</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1E262B]"></span>
+                  <span>Post-lecture debrief & derailment analytics</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-[#4B555D]/15">
+              <button
+                onClick={() => onSelectRole('teacher')}
+                className="w-full bg-[#1E262B] text-[#F3F5F4] py-3 px-5 rounded-xl font-sans font-medium text-xs hover:bg-[#383B42] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition shadow-xs"
+              >
+                Sign In as Instructor
+              </button>
+            </div>
+          </div>
+
+          {/* STUDENT DOOR */}
+          <div className="bg-[#FFFFFF] border border-[#4B555D]/20 rounded-2xl p-8 flex flex-col justify-between transition hover:border-[#1D4E89]">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-sans font-semibold text-[#1D4E89] bg-[#1D4E89]/10 px-2.5 py-1 rounded-md border border-[#1D4E89]/20">
+                  Enrolled Students & Guests
+                </span>
+                <span className="text-2xl" aria-hidden="true">🧑‍🎓</span>
+              </div>
+              <h2 className="font-cormorant text-2xl text-[#1E262B] font-medium">
+                Student Portal
+              </h2>
+              <p className="text-xs font-sans text-[#4B555D] mt-2 leading-relaxed">
+                Privately communicate when algebra skips a step or lecture pacing accelerates. Your friction signals are aggregated anonymously to keep the room on track.
+              </p>
+              <ul className="mt-5 space-y-2 text-xs font-sans text-[#1E262B]">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1D4E89]"></span>
+                  <span>Zero peer exposure: pulses are 100% anonymous</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1D4E89]"></span>
+                  <span>Single-tap friction categories (Step, Pacing, Notation)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1D4E89]"></span>
+                  <span>Submit and second lecture questions without raising hand</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-[#4B555D]/15">
+              <button
+                onClick={() => onSelectRole('student')}
+                className="w-full bg-[#1D4E89] text-[#FFFFFF] py-3 px-5 rounded-xl font-sans font-medium text-xs hover:bg-[#153A66] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition shadow-xs"
+              >
+                Sign In as Student
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 2D. TEACHER LOGIN PORTAL (Structured Lectern Docket + Authentication Desk)
+// ----------------------------------------------------------------------------
+function TeacherLoginComponent({
+  roomCode,
+  courseName,
+  activeTopic,
+  onLoginSuccess,
+  onSwitchToStudent,
+  onBack,
+  onPinUnlock
+}) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPinForm, setShowPinForm] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const res = await onLoginSuccess(email, password, 'teacher');
+    setLoading(false);
+    if (!res.success) {
+      setError(res.error || 'Authentication failed');
+    }
+  };
+
+  const handleQuickEuler = async () => {
+    setEmail('prof.euler@nudgepoint.edu');
+    setPassword('PodiumPass123!');
+    setLoading(true);
+    setError('');
+    const res = await onLoginSuccess('prof.euler@nudgepoint.edu', 'PodiumPass123!', 'teacher');
+    setLoading(false);
+    if (!res.success) {
+      setError(res.error || 'Authentication failed');
+    }
+  };
+
+  const handlePinSubmit = async (e) => {
+    e.preventDefault();
+    if (!pinInput.trim()) return;
+    setLoading(true);
+    setPinError('');
+    const res = await onPinUnlock(pinInput);
+    setLoading(false);
+    if (!res.success) {
+      setPinError(res.error || 'Invalid PIN for room ' + roomCode);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F3F5F4] text-[#1E262B] flex flex-col font-sans selection:bg-[#1E262B] selection:text-[#F3F5F4]">
+      {/* Top Header */}
+      <header className="border-b border-[#4B555D]/20 bg-[#F3F5F4] px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="font-serif text-2xl font-bold tracking-tight text-[#1E262B]">
+              NUDGEPOINT
+            </span>
+            <span className="text-xs font-sans text-[#4B555D] border-l border-[#4B555D]/30 pl-3">
+              Faculty Lectern
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onSwitchToStudent}
+              className="text-xs font-sans text-[#1D4E89] hover:underline"
+            >
+              Switch to Student Portal
+            </button>
+            <button
+              onClick={onBack}
+              className="text-xs font-sans text-[#4B555D] hover:text-[#1E262B] transition py-1.5 px-3 rounded-lg border border-[#4B555D]/20 hover:border-[#1E262B] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none"
+            >
+              Return to Session
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Two-Column Lectern Docket & Authentication Desk */}
+      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-10 flex items-center">
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 rounded-2xl border border-[#4B555D]/20 overflow-hidden shadow-xs">
+          
+          {/* LEFT COLUMN: Chalkboard Slate Lectern Docket */}
+          <div className="md:col-span-5 bg-[#1E262B] text-[#F3F5F4] p-8 flex flex-col justify-between">
+            <div>
+              <div className="text-xs font-sans text-[#F3F5F4]/70 mb-1">
+                Room Preparation Docket
+              </div>
+              <h1 className="font-cormorant text-2xl text-[#FFFFFF] font-medium">
+                Lectern Readiness
+              </h1>
+
+              <div className="mt-6 pt-5 border-t border-[#4B555D]/40 space-y-4 text-xs">
+                <div>
+                  <span className="text-[#F3F5F4]/60 block text-[11px]">Assigned Room</span>
+                  <span className="font-mono text-base font-semibold text-[#FFFFFF]">{roomCode}</span>
+                </div>
+                <div>
+                  <span className="text-[#F3F5F4]/60 block text-[11px]">Course</span>
+                  <span className="font-sans font-medium text-[#FFFFFF]">{courseName}</span>
+                </div>
+                <div>
+                  <span className="text-[#F3F5F4]/60 block text-[11px]">Current Milestone</span>
+                  <span className="font-sans text-[#FFFFFF]/90">{activeTopic}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-5 border-t border-[#4B555D]/40 text-xs text-[#F3F5F4]/80 space-y-2">
+                <div className="font-sans font-semibold text-[#FFFFFF]">Podium Controls:</div>
+                <p className="text-[11px] leading-relaxed text-[#F3F5F4]/70">
+                  Signing in verifies ownership of room {roomCode} and activates real-time cognitive radar telemetry.
+                </p>
+              </div>
+            </div>
+
+            {/* Deliberate Bold Element: 1-Click Instructor Preset */}
+            <div className="mt-8 pt-6 border-t border-[#4B555D]/40">
+              <span className="text-[11px] font-sans text-[#F3F5F4]/70 block mb-2">
+                One-Click Verified Demo Access:
+              </span>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleQuickEuler}
+                className="w-full bg-[#FFFFFF] text-[#1E262B] hover:bg-[#F3F5F4] transition py-2.5 px-4 rounded-xl text-xs font-sans font-semibold text-left flex items-center justify-between focus:ring-2 focus:ring-[#1D4E89] focus:outline-none"
+              >
+                <div>
+                  <div>Prof. Leonhard Euler</div>
+                  <div className="text-[10px] text-[#4B555D] font-mono">Owner of Room {roomCode}</div>
+                </div>
+                <span className="text-base" aria-hidden="true">🧑‍🏫</span>
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Instructor Authentication Desk */}
+          <div className="md:col-span-7 bg-[#FFFFFF] p-8 sm:p-10 flex flex-col justify-center">
+            <div className="mb-6">
+              <h2 className="font-cormorant text-3xl font-normal text-[#1E262B]">
+                Instructor Access
+              </h2>
+              <p className="text-xs font-sans text-[#4B555D] mt-1.5">
+                Sign in with your verified instructor credentials to manage live classroom telemetry.
+              </p>
+            </div>
+
+            {error && (
+              <div role="alert" className="mb-6 p-4 rounded-xl bg-[#FAF3EA] border border-[#9E5A18] text-xs font-sans text-[#9E5A18] flex items-start gap-2.5">
+                <span className="text-base shrink-0">⚠️</span>
+                <div>
+                  <div className="font-semibold">Access Notice</div>
+                  <div className="mt-0.5 leading-relaxed">{error}</div>
+                </div>
+              </div>
+            )}
+
+            {!showPinForm ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-sans font-medium text-[#1E262B] mb-1.5">
+                    Faculty Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="prof.euler@nudgepoint.edu"
+                    className="w-full text-xs font-sans py-3 px-3.5 rounded-xl border border-[#4B555D]/30 bg-[#FFFFFF] text-[#1E262B] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-sans font-medium text-[#1E262B] mb-1.5">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full text-xs font-sans py-3 px-3.5 rounded-xl border border-[#4B555D]/30 bg-[#FFFFFF] text-[#1E262B] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#1E262B] text-[#FFFFFF] py-3 px-4 rounded-xl text-xs font-sans font-medium hover:bg-[#383B42] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition disabled:opacity-50 mt-2"
+                >
+                  {loading ? 'Verifying Faculty Credentials...' : 'Sign In to Podium'}
+                </button>
+
+                <div className="pt-4 border-t border-[#4B555D]/15 flex items-center justify-between text-xs text-[#4B555D]">
+                  <span>Standing at the physical lectern?</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPinForm(true)}
+                    className="text-[#1D4E89] font-medium hover:underline"
+                  >
+                    Unlock with Room PIN
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handlePinSubmit} className="space-y-4">
+                <div className="p-3 bg-[#F3F5F4] rounded-xl border border-[#4B555D]/20 text-xs text-[#4B555D]">
+                  Enter the 4-digit instructor PIN displayed on the podium tablet for Room <strong>{roomCode}</strong>.
+                </div>
+
+                {pinError && (
+                  <div role="alert" className="p-3 rounded-xl bg-[#FAF3EA] border border-[#9E5A18] text-xs font-sans text-[#9E5A18]">
+                    {pinError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-sans font-medium text-[#1E262B] mb-1.5">
+                    Instructor Room PIN
+                  </label>
+                  <input
+                    type="password"
+                    maxLength={8}
+                    required
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    placeholder="Default: 8492"
+                    className="w-full text-center tracking-[0.3em] font-mono text-base py-3 px-3.5 rounded-xl border border-[#4B555D]/30 bg-[#FFFFFF] text-[#1E262B] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#1E262B] text-[#FFFFFF] py-3 px-4 rounded-xl text-xs font-sans font-medium hover:bg-[#383B42] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition disabled:opacity-50"
+                >
+                  {loading ? 'Checking PIN...' : 'Verify Room Passkey'}
+                </button>
+
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowPinForm(false)}
+                    className="text-xs font-sans text-[#4B555D] hover:underline"
+                  >
+                    Return to Email Login
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 2E. STUDENT LOGIN PORTAL (Single-Handed Admission Pass with Peer Privacy)
+// ----------------------------------------------------------------------------
+function StudentLoginComponent({
+  roomCode,
+  courseName,
+  onLoginSuccess,
+  onSwitchToTeacher,
+  onGuestJoin,
+  onBack
+}) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const res = await onLoginSuccess(email, password, 'student');
+    setLoading(false);
+    if (!res.success) {
+      setError(res.error || 'Authentication failed');
+    }
+  };
+
+  const handleQuickAlex = async () => {
+    setEmail('alex.rivera@nudgepoint.edu');
+    setPassword('StudentPass123!');
+    setLoading(true);
+    setError('');
+    const res = await onLoginSuccess('alex.rivera@nudgepoint.edu', 'StudentPass123!', 'student');
+    setLoading(false);
+    if (!res.success) {
+      setError(res.error || 'Authentication failed');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F3F5F4] text-[#1E262B] flex flex-col font-sans selection:bg-[#1D4E89] selection:text-[#FFFFFF]">
+      {/* Top Header */}
+      <header className="border-b border-[#4B555D]/20 bg-[#F3F5F4] px-6 py-4">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <span className="font-serif text-2xl font-bold tracking-tight text-[#1E262B]">
+            NUDGEPOINT
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onSwitchToTeacher}
+              className="text-xs font-sans text-[#1D4E89] hover:underline"
+            >
+              Instructor Portal
+            </button>
+            <button
+              onClick={onBack}
+              className="text-xs font-sans text-[#4B555D] hover:text-[#1E262B] transition py-1 px-2.5 rounded-lg border border-[#4B555D]/20 focus:ring-2 focus:ring-[#1D4E89] focus:outline-none"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Student Pass Card */}
+      <main className="flex-1 max-w-md mx-auto w-full px-4 py-8 flex flex-col justify-center">
+        <div className="bg-[#FFFFFF] border border-[#4B555D]/20 rounded-2xl overflow-hidden shadow-xs">
+          
+          {/* DELIBERATE BOLD ELEMENT: Perforated Admission Pass Stub */}
+          <div className="p-6 bg-[#FAFBFB] border-b-2 border-dashed border-[#4B555D]/30">
+            <div className="flex items-center justify-between text-xs font-mono text-[#4B555D]">
+              <span>ADMISSION PASS</span>
+              <span>ROOM {roomCode}</span>
+            </div>
+            <h1 className="font-cormorant text-2xl font-medium text-[#1E262B] mt-1">
+              {courseName}
+            </h1>
+
+            {/* Prominent Privacy Statement */}
+            <div className="mt-3 p-3 rounded-xl bg-[#F3F5F4] border border-[#4B555D]/15 text-xs text-[#4B555D] leading-relaxed flex items-start gap-2">
+              <span className="text-base shrink-0 text-[#1D4E89]">🛡️</span>
+              <div>
+                <strong className="text-[#1E262B] block">Peer Privacy Guarantee:</strong>
+                Your identity is never shown to classmates. Friction pulses appear purely as anonymous numbers on the instructor's radar.
+              </div>
+            </div>
+          </div>
+
+          {/* Student Form Body */}
+          <div className="p-6 sm:p-8 space-y-4">
+            {error && (
+              <div role="alert" className="p-3.5 rounded-xl bg-[#FAF3EA] border border-[#9E5A18] text-xs font-sans text-[#9E5A18] flex items-start gap-2">
+                <span className="shrink-0">⚠️</span>
+                <div className="leading-relaxed">{error}</div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-sans font-medium text-[#1E262B] mb-1.5">
+                  Student Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="alex.rivera@nudgepoint.edu"
+                  className="w-full text-xs font-sans py-3 px-3.5 rounded-xl border border-[#4B555D]/30 bg-[#FFFFFF] text-[#1E262B] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-sans font-medium text-[#1E262B] mb-1.5">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full text-xs font-sans py-3 px-3.5 rounded-xl border border-[#4B555D]/30 bg-[#FFFFFF] text-[#1E262B] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#1D4E89] text-[#FFFFFF] py-3 px-4 rounded-xl text-xs font-sans font-medium hover:bg-[#153A66] focus:ring-2 focus:ring-[#1D4E89] focus:outline-none transition disabled:opacity-50 mt-1"
+              >
+                {loading ? 'Connecting to Room...' : 'Enter Classroom'}
+              </button>
+            </form>
+
+            {/* 1-Click Demo Alex Rivera */}
+            <div className="pt-4 border-t border-[#4B555D]/15">
+              <span className="text-[11px] font-sans text-[#4B555D] block mb-2">
+                One-Click Enrolled Student Preset:
+              </span>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleQuickAlex}
+                className="w-full bg-[#F3F5F4] border border-[#1D4E89]/30 text-[#1D4E89] hover:bg-white transition py-2.5 px-3.5 rounded-xl text-xs font-sans font-semibold text-left flex items-center justify-between focus:ring-2 focus:ring-[#1D4E89] focus:outline-none"
+              >
+                <div>
+                  <div>Alex Rivera</div>
+                  <div className="text-[10px] text-[#4B555D] font-mono">Enrolled in Room {roomCode}</div>
+                </div>
+                <span className="text-base" aria-hidden="true">🧑‍🎓</span>
+              </button>
+            </div>
+
+            {/* Guest Pass Bypass */}
+            <div className="pt-3 text-center border-t border-[#4B555D]/15">
+              <button
+                type="button"
+                onClick={onGuestJoin}
+                className="text-xs font-sans text-[#4B555D] hover:text-[#1E262B] underline focus:ring-2 focus:ring-[#1D4E89] focus:outline-none"
+              >
+                Join as Anonymous Guest (No Account Required)
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 2D. CLASS TIMINGS COMPONENT (Schedule, Milestone Timeline & Office Hours)
+// ----------------------------------------------------------------------------
+function ClassTimingsComponent({ roomCode, courseName, activeTopic, onBackToPulse }) {
+  return (
+    <div className="flex flex-col gap-6 font-sans">
+      {/* Top Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#DDD7CB]">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#7A7E89]">
+              SCHEDULE & TIMINGS • ROOM {roomCode}
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold animate-pulse">
+              ● LIVE SESSION
+            </span>
+          </div>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#111215] tracking-tight">
+            Class Timetable & Milestone Schedule
+          </h2>
+          <p className="text-xs text-[#575B66] mt-0.5">
+            {courseName} &nbsp;•&nbsp; Section 04 &nbsp;•&nbsp; Science Center Hall 101
+          </p>
+        </div>
+        {onBackToPulse && (
+          <button
+            type="button"
+            onClick={onBackToPulse}
+            className="btn-gallery-pill-black !py-2 !px-4 text-xs font-mono"
+          >
+            ← Back to Personal Pulse
+          </button>
+        )}
+      </div>
+
+      {/* Live Session Progress Clock Banner */}
+      <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#DDD7CB] shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-[#1E262B] text-amber-400 flex items-center justify-center text-xl font-mono shadow-xs">
+              ⏱️
+            </div>
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-wider text-[#7A7E89]">
+                Today's Lecture Pacing (90-Minute Block)
+              </div>
+              <div className="text-sm font-semibold text-[#111215]">
+                10:00 AM – 11:30 AM EST &nbsp;•&nbsp; <span className="text-emerald-700 font-mono">35 mins elapsed (55 mins remaining)</span>
+              </div>
+            </div>
+          </div>
+          <div className="text-left sm:text-right">
+            <span className="text-[10px] font-mono uppercase text-[#7A7E89] block">Current Lecture Milestone:</span>
+            <div className="text-xs font-semibold text-[#B45309] font-serif">{activeTopic}</div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full h-2.5 rounded-full bg-[#E5DFD5] overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-[#1D4E89] to-[#059669] rounded-full" style={{ width: '39%' }}></div>
+        </div>
+        <div className="flex justify-between items-center text-[10px] font-mono text-[#7A7E89] mt-2">
+          <span>10:00 AM (Start)</span>
+          <span className="text-emerald-700 font-semibold">10:18 AM (Conjugates)</span>
+          <span>10:45 AM (Trig Chain)</span>
+          <span>11:30 AM (Dismissal)</span>
+        </div>
+      </div>
+
+      {/* Grid: Topic Milestones + Office Hours / Key Dates */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left 7 cols: Topic Timeline Breakdown */}
+        <div className="lg:col-span-7 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#7A7E89]">
+              TODAY'S LECTURE MILESTONES
+            </span>
+            <span className="text-[10px] font-mono text-[#7A7E89]">5 Topics Planned</span>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            {[
+              { id: 'm1', time: '10:00 – 10:07', duration: '7 min', title: '1. Review: Slope & Tangent Lines', status: 'completed', desc: 'Recap of secant line limits and algebraic difference quotients.' },
+              { id: 'm2', time: '10:07 – 10:18', duration: '11 min', title: '2. Formal Definition of the Derivative', status: 'completed', desc: 'Establishing f\'(x) = lim h→0 [f(x+h) - f(x)]/h.' },
+              { id: 'm3', time: '10:18 – 10:31', duration: '13 min', title: '3. Step 3: Algebraic Conjugate Substitution', status: 'active', desc: 'Conjugate expansion [√(x+h) + √x] and eliminating h in denominator.' },
+              { id: 'm4', time: '10:31 – 10:45', duration: '14 min', title: '4. Chain Rule with Trigonometric Functions', status: 'upcoming', desc: 'Composing outer derivative with inner rate of change: d/dx[sin(g(x))].' },
+              { id: 'm5', time: '10:45 – 11:30', duration: '45 min', title: '5. Real-World Velocity Application & Synthesis', status: 'upcoming', desc: 'Projectile trajectory velocity vectors and open backchannel Q&A.' }
+            ].map((m) => (
+              <div
+                key={m.id}
+                className={`p-3.5 rounded-xl border transition ${
+                  m.status === 'active'
+                    ? 'bg-[#FEF7EE] border-[#EAD1A8] shadow-xs'
+                    : m.status === 'completed'
+                    ? 'bg-[#FAF8F5] border-[#E5DFD5] opacity-85'
+                    : 'bg-[#FAF9F7] border-[#ECE7DE]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
+                      m.status === 'active'
+                        ? 'bg-[#B45309] text-white'
+                        : m.status === 'completed'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-neutral-200 text-neutral-600'
+                    }`}>
+                      {m.status === 'active' ? '● CURRENT' : m.status === 'completed' ? '✓ DONE' : 'UPCOMING'}
+                    </span>
+                    <span className="text-xs font-mono font-semibold text-[#111215]">{m.time}</span>
+                    <span className="text-[10px] font-mono text-[#7A7E89]">({m.duration})</span>
+                  </div>
+                </div>
+                <div className="text-xs font-medium text-[#111215] font-serif">{m.title}</div>
+                <p className="text-[11px] text-[#575B66] mt-0.5 leading-relaxed">{m.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right 5 cols: Weekly Recitations, Office Hours, Deadlines */}
+        <div className="lg:col-span-5 flex flex-col gap-4">
+          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#7A7E89]">
+            WEEKLY SESSIONS & RECITATIONS
+          </span>
+
+          <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#DDD7CB] flex flex-col gap-3">
+            <div>
+              <div className="text-xs font-semibold text-[#111215]">Lectures (3 Days / Week)</div>
+              <div className="text-xs text-[#575B66] font-mono mt-0.5">Mon, Wed, Fri • 10:00 AM – 11:30 AM</div>
+              <div className="text-[11px] text-[#7A7E89]">Science Center Hall 101 • Room CALC</div>
+            </div>
+            <div className="border-t border-[#E5DFD5] pt-2.5">
+              <div className="text-xs font-semibold text-[#111215]">Prof. Leonhard Euler Office Hours</div>
+              <div className="text-xs text-[#575B66] font-mono mt-0.5">Tuesdays & Thursdays • 2:00 PM – 4:00 PM</div>
+              <div className="text-[11px] text-[#7A7E89]">Hall 302 or via Zoom by appointment</div>
+            </div>
+            <div className="border-t border-[#E5DFD5] pt-2.5">
+              <div className="text-xs font-semibold text-[#111215]">TA Discussion & Problem Lab</div>
+              <div className="text-xs text-[#575B66] font-mono mt-0.5">Wednesdays • 4:30 PM – 6:00 PM</div>
+              <div className="text-[11px] text-[#7A7E89]">Math Annex 12</div>
+            </div>
+          </div>
+
+          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#7A7E89]">
+            UPCOMING EXAMS & DEADLINES
+          </span>
+          <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#DDD7CB] flex flex-col gap-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <div>
+                <span className="font-medium text-[#111215]">Problem Set 4</span>
+                <span className="block text-[10px] text-[#7A7E89]">Conjugates & Difference Quotients</span>
+              </div>
+              <span className="font-mono text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Due Friday 11:59 PM</span>
+            </div>
+            <div className="flex items-center justify-between text-xs pt-2 border-t border-[#E5DFD5]">
+              <div>
+                <span className="font-medium text-[#111215]">Midterm Exam 1</span>
+                <span className="block text-[10px] text-[#7A7E89]">Units 1 & 2 • In Class</span>
+              </div>
+              <span className="font-mono text-[10px] text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">Oct 24 • 10:00 AM</span>
+            </div>
+            <div className="flex items-center justify-between text-xs pt-2 border-t border-[#E5DFD5]">
+              <div>
+                <span className="font-medium text-[#111215]">Midterm Exam 2</span>
+                <span className="block text-[10px] text-[#7A7E89]">Units 3 & 4 • In Class</span>
+              </div>
+              <span className="font-mono text-[10px] text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">Nov 21 • 10:00 AM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 2E. CLASS SYLLABUS COMPONENT (Comprehensive Academic Curriculum & Policies)
+// ----------------------------------------------------------------------------
+function ClassSyllabusComponent({ roomCode, courseName, onBackToPulse }) {
+  return (
+    <div className="flex flex-col gap-6 font-sans">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#DDD7CB]">
+        <div>
+          <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#7A7E89] mb-1">
+            OFFICIAL COURSE SYLLABUS • FALL SEMESTER 2026
+          </div>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#111215] tracking-tight">
+            {courseName}
+          </h2>
+          <p className="text-xs text-[#575B66] mt-0.5">
+            Section 04 &nbsp;•&nbsp; 4.0 Credit Hours &nbsp;•&nbsp; Instructor: Prof. Leonhard Euler
+          </p>
+        </div>
+        {onBackToPulse && (
+          <button
+            type="button"
+            onClick={onBackToPulse}
+            className="btn-gallery-pill-black !py-2 !px-4 text-xs font-mono"
+          >
+            ← Back to Personal Pulse
+          </button>
+        )}
+      </div>
+
+      {/* Course Overview & Objectives */}
+      <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#DDD7CB]">
+        <h3 className="font-serif text-lg font-semibold text-[#111215] mb-2">
+          Course Description & Scope
+        </h3>
+        <p className="text-xs text-[#383B42] leading-relaxed mb-3">
+          This course develops the mathematical principles of differential, integral, and vector calculus in three and higher dimensional spaces. Key concepts include vector-valued functions, space curves, partial differentiation, directional derivatives, gradient vector fields, multiple integrals in Cartesian, cylindrical, and spherical coordinates, line and surface integrals, and culminating in Green’s Theorem, Stokes’ Theorem, and the Divergence Theorem.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#E5DFD5] text-xs">
+          <div>
+            <span className="text-[10px] font-mono uppercase text-[#7A7E89] block">PREREQUISITE</span>
+            <span className="font-medium text-[#111215]">MATH 102 (Single-Var Calc, C or higher)</span>
+          </div>
+          <div>
+            <span className="text-[10px] font-mono uppercase text-[#7A7E89] block">TEXTBOOK</span>
+            <span className="font-medium text-[#111215]">Stewart Calculus (9th Edition)</span>
+          </div>
+          <div>
+            <span className="text-[10px] font-mono uppercase text-[#7A7E89] block">LIVE PULSE PORTAL</span>
+            <span className="font-medium text-[#111215]">NudgePoint Room: {roomCode}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 15-Week Curriculum Matrix */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#7A7E89]">
+            15-WEEK CURRICULAR BREAKDOWN
+          </span>
+          <span className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-semibold">
+            Currently in Week 4: Unit 2
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {[
+            {
+              unit: 'Unit 1: Vectors & The Geometry of Space',
+              weeks: 'Weeks 1–3',
+              status: 'completed',
+              topics: '3D coordinate systems, vector arithmetic, dot and cross products, equations of lines and planes, quadric surfaces.'
+            },
+            {
+              unit: 'Unit 2: Vector Functions & Differential Calculus',
+              weeks: 'Weeks 4–6',
+              status: 'current',
+              topics: 'Vector functions and space curves, derivatives and integrals of vector functions, arc length and curvature, limits, algebraic conjugate substitutions, multivariable chain rule.'
+            },
+            {
+              unit: 'Unit 3: Partial Derivatives & Multivariable Optimization',
+              weeks: 'Weeks 7–9',
+              status: 'upcoming',
+              topics: 'Functions of several variables, limits and continuity in R^n, partial derivatives, tangent planes and linear approximations, directional derivatives, gradient vectors, maximum and minimum values, Lagrange multipliers.'
+            },
+            {
+              unit: 'Unit 4: Multiple Integrals & Coordinate Systems',
+              weeks: 'Weeks 10–12',
+              status: 'upcoming',
+              topics: 'Double integrals over general regions, polar coordinate transformations, surface area, triple integrals in cylindrical and spherical coordinates, Jacobian change of variables.'
+            },
+            {
+              unit: 'Unit 5: Vector Calculus & Field Theorems',
+              weeks: 'Weeks 13–15',
+              status: 'upcoming',
+              topics: 'Vector fields, line integrals, Fundamental Theorem of Line Integrals, Green’s Theorem, curl and divergence, surface integrals, Stokes’ Theorem, Divergence Theorem.'
+            }
+          ].map((u, i) => (
+            <div
+              key={i}
+              className={`p-4 rounded-xl border transition ${
+                u.status === 'current'
+                  ? 'bg-[#FEF7EE] border-[#EAD1A8] shadow-xs'
+                  : 'bg-[#FAF8F5] border-[#DDD7CB]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
+                    u.status === 'current'
+                      ? 'bg-[#B45309] text-white'
+                      : u.status === 'completed'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-neutral-200 text-neutral-600'
+                  }`}>
+                    {u.status === 'current' ? 'CURRENT UNIT' : u.status === 'completed' ? 'COMPLETED' : 'UPCOMING'}
+                  </span>
+                  <span className="font-serif text-sm font-semibold text-[#111215]">{u.unit}</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#7A7E89]">{u.weeks}</span>
+              </div>
+              <p className="text-xs text-[#575B66] mt-1 leading-relaxed">{u.topics}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Grading Scheme & Policies */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#DDD7CB]">
+          <h4 className="font-serif text-base font-semibold text-[#111215] mb-3">
+            Assessment & Grading Weights
+          </h4>
+          <div className="space-y-2">
+            {[
+              { component: 'Weekly Problem Sets', weight: '25%', note: 'Due Fridays 11:59 PM (Lowest dropped)' },
+              { component: 'Midterm Examination 1', weight: '20%', note: 'Covers Units 1–2 (Week 7)' },
+              { component: 'Midterm Examination 2', weight: '20%', note: 'Covers Units 3–4 (Week 12)' },
+              { component: 'Comprehensive Final Exam', weight: '25%', note: 'Cumulative university scheduled' },
+              { component: 'In-Class Pulse Participation', weight: '10%', note: 'Active NudgePoint friction feedback' },
+            ].map((g, idx) => (
+              <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-[#E5DFD5] last:border-0">
+                <div>
+                  <span className="font-medium text-[#111215]">{g.component}</span>
+                  <span className="block text-[10px] text-[#7A7E89]">{g.note}</span>
+                </div>
+                <span className="font-mono font-bold text-xs text-[#1D4E89]">{g.weight}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#DDD7CB] flex flex-col justify-between">
+          <div>
+            <h4 className="font-serif text-base font-semibold text-[#111215] mb-2">
+              Classroom Dignity & Policies
+            </h4>
+            <ul className="text-xs text-[#575B66] space-y-2 list-disc list-inside leading-relaxed">
+              <li><strong>Zero-Stigma Feedback:</strong> NudgePoint friction pulses are completely anonymous to peers. Use signals freely whenever derivations feel fast or unclear.</li>
+              <li><strong>Collaboration:</strong> Concept discussions are celebrated. However, all homework submissions must be transcribed individually.</li>
+              <li><strong>Late Submissions:</strong> Up to 24 hours late with 10% deduction; beyond 24 hours requires dean approval.</li>
+            </ul>
+          </div>
+          <div className="mt-4 pt-3 border-t border-[#E5DFD5] text-[10px] font-mono text-[#7A7E89]">
+            Questions? Email Prof. Euler at <span className="underline font-semibold">prof.euler@nudgepoint.edu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
 // 3. MAIN APPLICATION ROOT
 // ----------------------------------------------------------------------------
 function NudgePointApp() {
   const parseRoute = () => {
-    const hash = window.location.hash.replace(/^#/, '');
-    const params = new URLSearchParams(hash);
+    const rawHash = window.location.hash.replace(/^#\/?/, '');
+    const pathname = window.location.pathname ? window.location.pathname.replace(/^\//, '') : '';
+    const target = rawHash || pathname;
+
     let view = 'studio';
     let code = 'CALC';
-    if (params.get('view')) view = params.get('view');
-    else if (hash.includes('student')) view = 'student';
-    else if (hash.includes('podium')) view = 'podium';
-    else if (hash.includes('stage')) view = 'stage';
-    else if (hash.includes('analytics')) view = 'analytics';
 
-    if (params.get('room')) code = params.get('room').toUpperCase();
+    if (target.startsWith('login/teacher') || target.startsWith('view=login-teacher')) {
+      view = 'login-teacher';
+    } else if (target.startsWith('login/student') || target.startsWith('view=login-student')) {
+      view = 'login-student';
+    } else if (target.startsWith('login') || target.startsWith('view=login')) {
+      view = 'login-chooser';
+    } else {
+      const params = new URLSearchParams(rawHash.includes('?') ? rawHash.split('?')[1] : (rawHash.includes('&') ? rawHash : ''));
+      if (params.get('view')) view = params.get('view');
+      else if (rawHash.includes('timings') || target.startsWith('timings')) view = 'timings';
+      else if (rawHash.includes('syllabus') || target.startsWith('syllabus')) view = 'syllabus';
+      else if (rawHash.includes('student') || target.startsWith('student')) view = 'student';
+      else if (rawHash.includes('podium') || target.startsWith('podium')) view = 'podium';
+      else if (rawHash.includes('stage') || target.startsWith('stage')) view = 'stage';
+      else if (rawHash.includes('analytics') || target.startsWith('analytics')) view = 'analytics';
+
+      if (params.get('room')) code = params.get('room').toUpperCase();
+    }
+
     return { view, code };
   };
 
@@ -280,7 +1546,9 @@ function NudgePointApp() {
   const [topics] = useState(LECTURE_MILESTONES);
   const [windowDurationSec] = useState(90);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [showFlightSim, setShowFlightSim] = useState(true);
+  const [showFlightSim] = useState(true);
+  const [alertThreshold, setAlertThreshold] = useState(15); // % friction to trigger amber alert
+
 
   const [students] = useState(SIMULATION_ROSTER);
   const [pulses, setPulses] = useState([
@@ -307,7 +1575,9 @@ function NudgePointApp() {
       if (hash.includes('view=student')) {
         return getOrCreateStudentToken();
       }
-    } catch (e) {}
+    } catch (e) {
+      // Best-effort token initialization; falls back to 's1' if window/location is inaccessible
+    }
     return 's1';
   });
 
@@ -315,17 +1585,136 @@ function NudgePointApp() {
     { time: '10:18', topic: '2. Formal Definition of the Derivative', tag: 'Pacing Too Fast' }
   ]);
 
-  // Priority 1 & 3: Multi-device WebSocket Transport and Teacher PIN state
+  // Priority 1 & 3: Multi-device WebSocket Transport and RBAC Auth State
+  const [authToken, setAuthToken] = useState(() => {
+    try { return localStorage.getItem('np_auth_token') || null; } catch (e) { return null; }
+  });
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('np_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) { return null; }
+  });
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // Teacher PIN state (legacy fallback for quick room passkey entry)
   const [teacherPin, setTeacherPin] = useState(() => {
     try { return localStorage.getItem('np_teacher_pin') || '8492'; } catch (e) { return '8492'; }
   });
   const [isTeacherAuthenticated, setIsTeacherAuthenticated] = useState(() => {
-    try { return !!localStorage.getItem('np_teacher_pin'); } catch (e) { return false; }
+    try {
+      if (localStorage.getItem('np_user')) {
+        const u = JSON.parse(localStorage.getItem('np_user'));
+        if (u && u.role === 'teacher') return true;
+      }
+      return !!localStorage.getItem('np_teacher_pin');
+    } catch (e) { return false; }
   });
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [socketConnected, setSocketConnected] = useState(false);
   const [serverNotice, setServerNotice] = useState(null);
+
+  const isTeacherUser = (currentUser && currentUser.role === 'teacher') || (!currentUser && isTeacherAuthenticated);
+  const isStudentRole = (currentUser && currentUser.role === 'student') || activeView === 'student' || activeView === 'timings' || activeView === 'syllabus';
+
+  // Authenticate / refresh user session on load
+  useEffect(() => {
+    if (!authToken) return;
+    fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && data.user) {
+          setCurrentUser(data.user);
+          if (data.user.role === 'teacher') {
+            setIsTeacherAuthenticated(true);
+          }
+          try { localStorage.setItem('np_user', JSON.stringify(data.user)); } catch (e) {}
+        } else {
+          setAuthToken(null);
+          setCurrentUser(null);
+          try {
+            localStorage.removeItem('np_auth_token');
+            localStorage.removeItem('np_user');
+          } catch (e) {}
+        }
+      })
+      .catch(() => {});
+  }, [authToken]);
+
+  const loginUser = async (email, password, expectedRole = null) => {
+    try {
+      const payload = { email, password };
+      if (expectedRole) payload.expectedRole = expectedRole;
+
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      setAuthToken(data.token);
+      setCurrentUser(data.user);
+      if (data.user.role === 'teacher') {
+        setIsTeacherAuthenticated(true);
+      }
+      try {
+        localStorage.setItem('np_auth_token', data.token);
+        localStorage.setItem('np_user', JSON.stringify(data.user));
+      } catch (e) {}
+      setPinError('');
+      return { success: true, user: data.user };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const signupUser = async (email, password, fullName, role) => {
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, fullName, role })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Signup failed');
+      setAuthToken(data.token);
+      setCurrentUser(data.user);
+      if (data.user.role === 'teacher') {
+        setIsTeacherAuthenticated(true);
+      }
+      try {
+        localStorage.setItem('np_auth_token', data.token);
+        localStorage.setItem('np_user', JSON.stringify(data.user));
+      } catch (e) {}
+      setPinError('');
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const logoutUser = async () => {
+    if (authToken) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+      } catch (e) {}
+    }
+    setAuthToken(null);
+    setCurrentUser(null);
+    setIsTeacherAuthenticated(false);
+    try {
+      localStorage.removeItem('np_auth_token');
+      localStorage.removeItem('np_user');
+      localStorage.removeItem('np_teacher_pin');
+    } catch (e) {}
+  };
 
   const wsRef = useRef(null);
   const channelRef = useRef(null);
@@ -345,12 +1734,14 @@ function NudgePointApp() {
         ws.onopen = () => {
           if (!isMounted) return;
           setSocketConnected(true);
+          const effectiveRole = (currentUser && currentUser.role === 'teacher') || activeView === 'podium' ? 'podium' : 'student';
           ws.send(JSON.stringify({
             type: 'JOIN',
             room: roomCode,
-            role: activeView === 'podium' ? 'podium' : 'student',
+            role: effectiveRole,
+            token: authToken,
             pin: teacherPin,
-            studentId: studentToken
+            studentId: currentUser ? currentUser.id : studentToken
           }));
         };
 
@@ -359,17 +1750,29 @@ function NudgePointApp() {
           try {
             const msg = JSON.parse(e.data);
             if (msg.type === 'INIT_STATE' && msg.data) {
-              if (Array.isArray(msg.data.pulses)) setPulses(msg.data.pulses);
+              if (Array.isArray(msg.data.pulses)) {
+                setPulses(msg.data.pulses);
+              } else if (msg.data.myPulse) {
+                setPulses([{ ...msg.data.myPulse, isMine: true }]);
+              } else if (currentUser && currentUser.role === 'student') {
+                setPulses([]);
+              }
               if (Array.isArray(msg.data.questions)) setQuestions(msg.data.questions);
               if (Array.isArray(msg.data.interventions)) setInterventions(msg.data.interventions);
               if (msg.data.activeTopic) setActiveTopic(msg.data.activeTopic);
             } else if (msg.type === 'PULSE') {
+              const pData = msg.data;
               setPulses((prev) => {
-                if (prev.some((p) => p.id === msg.data.id)) return prev;
-                return [...prev, msg.data];
+                if (prev.some((p) => p.id === pData.id)) return prev;
+                return [...prev, pData];
               });
             } else if (msg.type === 'RESOLVE') {
-              setPulses((prev) => prev.filter((p) => p.studentId !== msg.data.studentId));
+              if (msg.data && msg.data.studentId) {
+                setPulses((prev) => prev.filter((p) => p.studentId !== msg.data.studentId));
+              } else {
+                const targetId = currentUser ? currentUser.id : studentToken;
+                setPulses((prev) => prev.filter((p) => !p.isMine && p.studentId !== targetId));
+              }
             } else if (msg.type === 'QUESTION') {
               setQuestions((prev) => {
                 if (prev.some((q) => q.id === msg.data.id)) return prev;
@@ -390,7 +1793,9 @@ function NudgePointApp() {
               setIsTeacherAuthenticated(false);
               setPinError(msg.message);
             }
-          } catch (parseErr) {}
+          } catch (parseErr) {
+            console.warn('[NudgePoint] Malformed WebSocket message payload:', e.data, parseErr);
+          }
         };
 
         ws.onclose = () => {
@@ -400,11 +1805,13 @@ function NudgePointApp() {
         };
 
         ws.onerror = () => {
+          // Best-effort cleanup of errored socket before reconnect
           try { ws.close(); } catch (err) {}
         };
 
         wsRef.current = ws;
       } catch (err) {
+        console.warn('[NudgePoint] WebSocket initialization failed, retrying in 3s:', err);
         reconnectTimeout = setTimeout(initSocket, 3000);
       }
     }
@@ -424,7 +1831,9 @@ function NudgePointApp() {
           else if (type === 'TOPIC') setActiveTopic(data);
         };
       }
-    } catch (e) {}
+    } catch (e) {
+      // Best-effort local sync; silently fallback if BroadcastChannel is restricted (e.g. sandbox iframe)
+    }
 
     return () => {
       isMounted = false;
@@ -436,41 +1845,70 @@ function NudgePointApp() {
         try { channelRef.current.close(); } catch (e) {}
       }
     };
-  }, [roomCode, teacherPin, activeView]);
+  }, [roomCode, teacherPin, activeView, authToken]);
 
   const broadcast = (type, data) => {
-    // 1. WebSocket send to server (multi-device real-time relay)
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       try {
         wsRef.current.send(JSON.stringify({ type, room: roomCode, data }));
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[NudgePoint] Failed to send WebSocket frame:', type, e);
+      }
     }
-    // 2. BroadcastChannel for instant same-browser reflection
     if (channelRef.current) {
-      try { channelRef.current.postMessage({ type, data }); } catch (e) {}
+      try {
+        channelRef.current.postMessage({ type, data });
+      } catch (e) {}
     }
   };
 
-  const handleVerifyTeacherPin = (e) => {
-    e.preventDefault();
-    const pin = pinInput.trim();
-    if (!pin) {
-      setPinError('Please enter the 4-digit teacher passkey.');
-      return;
+  const verifyTeacherPinDirect = async (pin) => {
+    const cleanPin = (pin || '').trim();
+    if (!cleanPin) return { success: false, error: 'Please enter the 4-digit teacher passkey.' };
+    try {
+      const res = await fetch('/api/rooms/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room: roomCode, pin: cleanPin })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.token && data.user) {
+          setAuthToken(data.token);
+          setCurrentUser(data.user);
+          try {
+            localStorage.setItem('np_auth_token', data.token);
+            localStorage.setItem('np_user', JSON.stringify(data.user));
+          } catch (e) {}
+        }
+        try { localStorage.setItem('np_teacher_pin', cleanPin); } catch (e) {}
+        setTeacherPin(cleanPin);
+        setIsTeacherAuthenticated(true);
+        setPinError('');
+        return { success: true };
+      } else {
+        return { success: false, error: 'Invalid Teacher PIN. (Default Room CALC PIN is 8492)' };
+      }
+    } catch (err) {
+      if (cleanPin === teacherPin || cleanPin === '8492') {
+        try { localStorage.setItem('np_teacher_pin', cleanPin); } catch (e) {}
+        setTeacherPin(cleanPin);
+        setIsTeacherAuthenticated(true);
+        setPinError('');
+        return { success: true };
+      }
+      return { success: false, error: 'Invalid Teacher PIN. (Default Room CALC PIN is 8492)' };
     }
-    if (pin === teacherPin || pin === '8492') {
-      try { localStorage.setItem('np_teacher_pin', pin); } catch (err) {}
-      setTeacherPin(pin);
-      setIsTeacherAuthenticated(true);
-      setPinError('');
-    } else {
-      setPinError('Invalid Teacher PIN. (Default Room CALC PIN is 8492)');
-    }
+  };
+
+  const handleVerifyTeacherPin = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const res = await verifyTeacherPinDirect(pinInput);
+    if (!res.success) setPinError(res.error);
   };
 
   const handleLogoutTeacher = () => {
-    try { localStorage.removeItem('np_teacher_pin'); } catch (e) {}
-    setIsTeacherAuthenticated(false);
+    logoutUser();
     setPinInput('');
   };
 
@@ -483,8 +1921,9 @@ function NudgePointApp() {
   const activePulses = useMemo(() => pulses.filter((p) => p.timestamp >= windowCutoff), [pulses, windowCutoff]);
 
   const activeStudentPulse = useMemo(() => {
-    return activePulses.find((p) => p.studentId === studentToken) || null;
-  }, [activePulses, studentToken]);
+    const targetId = currentUser ? currentUser.id : studentToken;
+    return activePulses.find((p) => p.studentId === targetId || p.isMine) || null;
+  }, [activePulses, studentToken, currentUser]);
 
   const activeStudentIds = useMemo(() => {
     const s = new Set();
@@ -509,14 +1948,14 @@ function NudgePointApp() {
     : 0;
 
   const radarStatus = useMemo(() => {
-    if (frictionRate >= 30) {
+    if (frictionRate >= alertThreshold * 2) {
       return { level: 'red', label: 'Derailment Risk', icon: '🔴', color: '#C84B42', pulseClass: 'red-pulse-active' };
     }
-    if (frictionRate >= 15) {
+    if (frictionRate >= alertThreshold) {
       return { level: 'amber', label: 'Amber Pulse Active', icon: '🟡', color: '#C4761E', pulseClass: 'amber-pulse-active' };
     }
     return { level: 'neutral', label: 'Classroom in Flow', icon: '🟢', color: '#2B7A4B', pulseClass: '' };
-  }, [frictionRate]);
+  }, [frictionRate, alertThreshold]);
 
   useEffect(() => {
     if (radarStatus.level === 'amber' || radarStatus.level === 'red') {
@@ -548,17 +1987,18 @@ function NudgePointApp() {
     acoustic.playTap();
     if (navigator.vibrate) navigator.vibrate([25, 40, 25]);
 
+    const targetId = currentUser ? currentUser.id : studentToken;
     const pulse = {
-      id: 'p_' + Date.now() + '_' + studentToken,
-      studentId: studentToken,
+      id: 'p_' + Date.now() + '_' + targetId,
+      studentId: targetId,
       timestamp: Date.now(),
       tag: tagId,
       topic: activeTopic,
     };
 
     setPulses((prev) => {
-      const filtered = prev.filter((p) => p.studentId !== studentToken);
-      return [...filtered, pulse];
+      const filtered = prev.filter((p) => p.studentId !== targetId && !p.isMine);
+      return [...filtered, { ...pulse, isMine: true }];
     });
     broadcast('PULSE', pulse);
 
@@ -572,8 +2012,9 @@ function NudgePointApp() {
 
   const handleStudentResolve = () => {
     acoustic.playResolve();
-    setPulses((prev) => prev.filter((p) => p.studentId !== studentToken));
-    broadcast('RESOLVE', { studentId: studentToken });
+    const targetId = currentUser ? currentUser.id : studentToken;
+    setPulses((prev) => prev.filter((p) => p.studentId !== targetId && !p.isMine));
+    broadcast('RESOLVE', { studentId: targetId });
   };
 
   const handleDeployBridge = (title) => {
@@ -585,10 +2026,10 @@ function NudgePointApp() {
   };
 
   const [simFilter, setSimFilter] = useState('all');
-  const [hoveredStudentId, setHoveredStudentId] = useState(null);
 
   // Scenario 1: The Algebraic Leap (Skips line 2.5 conjugate cancel) -> Derails 11 students
   const simAlgebraicLeap = () => {
+    if (!isTeacherUser) return;
     acoustic.playPulseChime();
     const targets = students.filter(s => s.role === 'Shy' || (s.role === 'Note Copier' && ['C1','C2','C3','C4'].includes(s.seat)));
     const newItems = targets.map((s, idx) => ({
@@ -598,7 +2039,7 @@ function NudgePointApp() {
       tag: 'step',
       topic: activeTopic,
     }));
-    newItems.forEach(p => { try { broadcast('PULSE', p); } catch (e) {} });
+    newItems.forEach(p => broadcast('PULSE', p));
     setPulses(prev => {
       const existing = new Set(prev.map(p => p.studentId));
       return [...prev, ...newItems.filter(p => !existing.has(p.studentId))];
@@ -607,6 +2048,7 @@ function NudgePointApp() {
 
   // Scenario 2: Pacing Sprint (Slide flipped before notes copied) -> Derails 7 Note Copiers
   const simPacingSprint = () => {
+    if (!isTeacherUser) return;
     acoustic.playPulseChime();
     const targets = students.filter(s => s.role === 'Note Copier');
     const newItems = targets.map((s, idx) => ({
@@ -616,7 +2058,7 @@ function NudgePointApp() {
       tag: 'pace',
       topic: activeTopic,
     }));
-    newItems.forEach(p => { try { broadcast('PULSE', p); } catch (e) {} });
+    newItems.forEach(p => broadcast('PULSE', p));
     setPulses(prev => {
       const existing = new Set(prev.map(p => p.studentId));
       return [...prev, ...newItems.filter(p => !existing.has(p.studentId))];
@@ -625,6 +2067,7 @@ function NudgePointApp() {
 
   // Scenario 3: Notation Ambiguity (Differential operator d/dx ambiguity) -> Derails 5 students
   const simNotationAmbiguity = () => {
+    if (!isTeacherUser) return;
     acoustic.playPulseChime();
     const targets = students.filter(s => ['s1', 's2', 's10', 's13', 's18'].includes(s.id));
     const newItems = targets.map((s, idx) => ({
@@ -634,7 +2077,7 @@ function NudgePointApp() {
       tag: 'notation',
       topic: activeTopic,
     }));
-    newItems.forEach(p => { try { broadcast('PULSE', p); } catch (e) {} });
+    newItems.forEach(p => broadcast('PULSE', p));
     setPulses(prev => {
       const existing = new Set(prev.map(p => p.studentId));
       return [...prev, ...newItems.filter(p => !existing.has(p.studentId))];
@@ -643,20 +2086,21 @@ function NudgePointApp() {
 
   // Scenario 4: Socratic Recovery Cascade (Comprehension wave cascades across room)
   const simCascadeRecovery = () => {
+    if (!isTeacherUser) return;
     acoustic.playResolve();
     if (typeof window !== 'undefined' && window.confetti) {
       try {
         window.confetti({ particleCount: 50, spread: 75, origin: { y: 0.85 } });
-      } catch (e) {}
+      } catch (e) {
+        // Optional celebration effect; safely ignore if canvas-confetti throws
+      }
     }
     const rows = ['rowA', 'rowB', 'rowC', 'rowD', 'rowE'];
     rows.forEach((rId, i) => {
       setTimeout(() => {
         setPulses(prev => {
           const rowIds = new Set(students.filter(s => s.rowId === rId).map(s => s.id));
-          rowIds.forEach(stId => {
-            try { broadcast('RESOLVE', { studentId: stId }); } catch (e) {}
-          });
+          rowIds.forEach(stId => broadcast('RESOLVE', { studentId: stId }));
           return prev.filter(p => !rowIds.has(p.studentId));
         });
       }, (i + 1) * 220);
@@ -665,16 +2109,89 @@ function NudgePointApp() {
 
   // Scenario 5: Full Reset
   const simResetAll = () => {
+    if (!isTeacherUser) return;
     acoustic.playTap();
-    students.forEach(s => {
-      try { broadcast('RESOLVE', { studentId: s.id }); } catch (e) {}
-    });
+    students.forEach(s => broadcast('RESOLVE', { studentId: s.id }));
     setPulses([]);
   };
 
-  // Preserved aliases for existing handlers
-  const simDerailment = simAlgebraicLeap;
-  const simRecovery = simCascadeRecovery;
+  if (activeView === 'login-chooser') {
+    return (
+      <LoginChooserComponent
+        onSelectRole={(role) => {
+          window.location.hash = `#/login/${role}`;
+          setActiveView(`login-${role}`);
+        }}
+        onBack={() => {
+          window.location.hash = '#view=studio';
+          setActiveView('studio');
+        }}
+      />
+    );
+  }
+
+  if (activeView === 'login-teacher') {
+    return (
+      <TeacherLoginComponent
+        roomCode={roomCode}
+        courseName={courseName}
+        activeTopic={activeTopic}
+        onLoginSuccess={async (email, password, role) => {
+          const res = await loginUser(email, password, role);
+          if (res.success) {
+            window.location.hash = '#view=podium';
+            setActiveView('podium');
+          }
+          return res;
+        }}
+        onSwitchToStudent={() => {
+          window.location.hash = '#/login/student';
+          setActiveView('login-student');
+        }}
+        onBack={() => {
+          window.location.hash = '#view=studio';
+          setActiveView('studio');
+        }}
+        onPinUnlock={async (pin) => {
+          const res = await verifyTeacherPinDirect(pin);
+          if (res.success) {
+            window.location.hash = '#view=podium';
+            setActiveView('podium');
+          }
+          return res;
+        }}
+      />
+    );
+  }
+
+  if (activeView === 'login-student') {
+    return (
+      <StudentLoginComponent
+        roomCode={roomCode}
+        courseName={courseName}
+        onLoginSuccess={async (email, password, role) => {
+          const res = await loginUser(email, password, role);
+          if (res.success) {
+            window.location.hash = '#view=student';
+            setActiveView('student');
+          }
+          return res;
+        }}
+        onSwitchToTeacher={() => {
+          window.location.hash = '#/login/teacher';
+          setActiveView('login-teacher');
+        }}
+        onGuestJoin={() => {
+          window.location.hash = '#view=student';
+          setActiveView('student');
+        }}
+        onBack={() => {
+          window.location.hash = '#view=studio';
+          setActiveView('studio');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#EDE8E1] text-[#1A1B1F] flex flex-col font-sans relative overflow-x-hidden selection:bg-neutral-900 selection:text-white">
@@ -710,7 +2227,11 @@ function NudgePointApp() {
           {/* Brand Logo in Bold Elegant Serif */}
           <div className="flex items-center gap-3">
             <span
-              onClick={() => setActiveView('studio')}
+              onClick={() => {
+                const targetView = (currentUser && currentUser.role === 'student') ? 'student' : 'studio';
+                window.location.hash = `#view=${targetView}`;
+                setActiveView(targetView);
+              }}
               className="font-serif text-2xl font-bold tracking-tight text-[#111215] cursor-pointer hover:opacity-80 transition"
             >
               NUDGEPOINT
@@ -719,16 +2240,28 @@ function NudgePointApp() {
 
           {/* Centered Spaced-out Nav Links */}
           <nav className="hidden md:flex items-center gap-8 gallery-nav">
-            {[
-              { id: 'studio', label: 'STUDIO' },
-              { id: 'podium', label: 'PODIUM' },
-              { id: 'student', label: 'STUDENT' },
-              { id: 'stage', label: 'STAGE' },
-              { id: 'analytics', label: 'HEATMAP' },
-            ].map((link) => (
+            {(currentUser && currentUser.role === 'student'
+              ? [
+                  { id: 'student', label: 'STUDENT PULSE' },
+                  { id: 'timings', label: 'CLASS TIMINGS' },
+                  { id: 'syllabus', label: 'SYLLABUS' },
+                ]
+              : [
+                  { id: 'studio', label: 'STUDIO' },
+                  { id: 'podium', label: 'PODIUM' },
+                  { id: 'student', label: 'STUDENT' },
+                  { id: 'timings', label: 'TIMINGS' },
+                  { id: 'syllabus', label: 'SYLLABUS' },
+                  { id: 'stage', label: 'STAGE' },
+                  { id: 'analytics', label: 'HEATMAP' },
+                ]
+            ).map((link) => (
               <button
                 key={link.id}
-                onClick={() => setActiveView(link.id)}
+                onClick={() => {
+                  window.location.hash = `#view=${link.id}`;
+                  setActiveView(link.id);
+                }}
                 className={`gallery-nav-btn ${activeView === link.id ? 'active' : ''}`}
               >
                 {link.label}
@@ -736,17 +2269,48 @@ function NudgePointApp() {
             ))}
           </nav>
 
-          {/* Right Action Button (Pill) */}
-          <div className="flex items-center gap-3">
+          {/* Right Action Button (Pill) & User Role Status */}
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="gallery-nav-btn hidden sm:inline-flex"
             >
               {soundEnabled ? 'AUDIO: ON' : 'AUDIO: OFF'}
             </button>
-            <div className="rounded-full px-5 py-2 border border-[#CBC4B5] bg-[#F1EDE5] text-[11px] font-mono tracking-[0.18em] uppercase text-[#111215] font-medium shadow-xs whitespace-nowrap shrink-0">
+            <div className="rounded-full px-4 py-2 border border-[#CBC4B5] bg-[#F1EDE5] text-[11px] font-mono tracking-[0.18em] uppercase text-[#111215] font-medium shadow-xs whitespace-nowrap shrink-0">
               ROOM: {roomCode}
             </div>
+
+            {currentUser ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setAuthModalOpen(true)}
+                  className="rounded-full px-3.5 py-1.5 border border-[#111215] bg-[#111215] text-[#FAF8F4] text-[11px] font-sans font-medium hover:bg-[#383B42] transition flex items-center gap-1.5 shadow-xs shrink-0"
+                  title="Account Settings & Role Switcher"
+                >
+                  <span>{currentUser.role === 'teacher' ? '🧑‍🏫' : '🧑‍🎓'}</span>
+                  <span className="hidden sm:inline font-medium">{currentUser.full_name.split(' ')[0]}</span>
+                  <span className="text-[9px] font-mono uppercase opacity-75">[{currentUser.role}]</span>
+                </button>
+                <button
+                  onClick={logoutUser}
+                  className="text-[10px] font-mono text-[#7A7E89] hover:text-[#111215] underline hidden lg:inline"
+                  title="Sign Out"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  window.location.hash = '#/login';
+                  setActiveView('login-chooser');
+                }}
+                className="btn-gallery-pill-black !py-1.5 !px-3.5 text-[10px] font-mono tracking-wider shrink-0"
+              >
+                🔑 SIGN IN
+              </button>
+            )}
           </div>
 
         </div>
@@ -773,18 +2337,58 @@ function NudgePointApp() {
 
           {/* The Two Pill CTA Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
-            <button
-              onClick={() => setActiveView('podium')}
-              className="btn-gallery-pill-black"
-            >
-              EXPLORE PODIUM
-            </button>
-            <button
-              onClick={() => setActiveView('student')}
-              className="btn-gallery-pill-outline"
-            >
-              JOIN AS STUDENT
-            </button>
+            {currentUser && currentUser.role === 'student' ? (
+              <>
+                <button
+                  onClick={() => {
+                    window.location.hash = '#view=student';
+                    setActiveView('student');
+                  }}
+                  className="btn-gallery-pill-black"
+                >
+                  MY STUDENT PULSE
+                </button>
+                <button
+                  onClick={() => {
+                    window.location.hash = '#view=timings';
+                    setActiveView('timings');
+                  }}
+                  className="btn-gallery-pill-outline"
+                >
+                  CLASS TIMINGS
+                </button>
+                <button
+                  onClick={() => {
+                    window.location.hash = '#view=syllabus';
+                    setActiveView('syllabus');
+                  }}
+                  className="btn-gallery-pill-outline"
+                >
+                  COURSE SYLLABUS
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    window.location.hash = '#view=podium';
+                    setActiveView('podium');
+                  }}
+                  className="btn-gallery-pill-black"
+                >
+                  EXPLORE PODIUM
+                </button>
+                <button
+                  onClick={() => {
+                    window.location.hash = '#view=student';
+                    setActiveView('student');
+                  }}
+                  className="btn-gallery-pill-outline"
+                >
+                  JOIN AS STUDENT
+                </button>
+              </>
+            )}
           </div>
 
           {/* Scroll Down Indicator */}
@@ -817,12 +2421,14 @@ function NudgePointApp() {
                 ({frictionCount} of {totalStudents} students signaling within 90s window)
               </span>
             </div>
-            <button
-              onClick={simRecovery}
-              className="tracking-[0.14em] uppercase font-semibold text-[#B45309] hover:text-[#78350F] underline underline-offset-4 transition"
-            >
-              RESOLVE ALL →
-            </button>
+            {isTeacherUser && !isStudentRole && (
+              <button
+                onClick={simCascadeRecovery}
+                className="tracking-[0.14em] uppercase font-semibold text-[#B45309] hover:text-[#78350F] underline underline-offset-4 transition"
+              >
+                RESOLVE ALL →
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -862,12 +2468,10 @@ function NudgePointApp() {
                 onSelectTopic={setActiveTopic}
                 onDeployBridge={handleDeployBridge}
                 questions={questions}
-                onUpvoteQuestion={(id) => {
-                  setQuestions((prev) => prev.map((q) => q.id === id ? { ...q, upvotes: q.upvotes + 1 } : q));
-                  broadcast('UPVOTE', { id });
-                }}
                 onMarkAnswered={(id) => setQuestions((prev) => prev.map((q) => q.id === id ? { ...q, answered: true } : q))}
                 onToggleProject={(id) => setQuestions((prev) => prev.map((q) => q.id === id ? { ...q, projected: !q.projected } : q))}
+                alertThreshold={alertThreshold}
+                onAlertThresholdChange={setAlertThreshold}
               />
             </div>
 
@@ -881,7 +2485,7 @@ function NudgePointApp() {
                   <h3 className="font-serif text-xl font-normal text-[#111215] mt-0.5">Mobile Zero-Login</h3>
                 </div>
                 <span className="text-[10px] font-mono text-[#7A7E89] px-3 py-1 rounded-full border border-[#DDD7CB] bg-[#F1EDE5]">
-                  {studentToken === 's1' ? 'SEAT E1 • MARCUS CHEN' : 'ANONYMOUS'}
+                  {currentUser ? `🧑‍🎓 ${currentUser.full_name}` : studentToken === 's1' ? 'SEAT E1 • MARCUS CHEN' : 'ANONYMOUS'}
                 </span>
               </div>
 
@@ -893,6 +2497,9 @@ function NudgePointApp() {
                   activeTopic={activeTopic}
                   activeStudentPulse={activeStudentPulse}
                   studentToken={studentToken}
+                  currentUser={currentUser}
+                  onOpenAuth={() => { window.location.hash = '#/login/student'; setActiveView('login-student'); }}
+                  onQuickStudentLogin={() => loginUser('alex.rivera@nudgepoint.edu', 'StudentPass123!', 'student')}
                   onSignal={handleStudentSignal}
                   onResolve={handleStudentResolve}
                   questions={questions}
@@ -921,9 +2528,9 @@ function NudgePointApp() {
           </div>
         )}
 
-        {/* VIEW 2: DEDICATED TEACHER PODIUM (Role-Gated with Teacher PIN) */}
+        {/* VIEW 2: DEDICATED TEACHER PODIUM (Role-Gated with RBAC & Teacher PIN) */}
         {activeView === 'podium' && (
-          !isTeacherAuthenticated ? (
+          !((currentUser && currentUser.role === 'teacher') || isTeacherAuthenticated) ? (
             <div className="max-w-md mx-auto w-full py-8">
               <div className="gallery-panel p-8 flex flex-col gap-6 text-center shadow-lg">
                 <div className="w-12 h-12 rounded-full bg-[#111215] text-[#EDE8E1] flex items-center justify-center mx-auto text-xl">
@@ -937,8 +2544,32 @@ function NudgePointApp() {
                     Instructor Verification
                   </h3>
                   <p className="text-xs text-[#575B66] mt-2 leading-relaxed">
-                    Live classroom telemetry and pedagogical bridge controls are reserved for instructors. Please enter the room passkey.
+                    Live classroom telemetry and pedagogical bridge controls are reserved for instructors.
                   </p>
+                </div>
+
+                {/* 1-Click Instant Instructor Sign-in */}
+                <div className="p-4 rounded-2xl bg-[#FAF8F4] border border-[#DDD7CB] flex flex-col gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#7A7E89]">
+                    ⚡ Verified Room Owner
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => loginUser('prof.euler@nudgepoint.edu', 'PodiumPass123!')}
+                    className="btn-gallery-pill-black w-full !py-2.5 text-xs font-mono flex items-center justify-center gap-2"
+                  >
+                    <span>🧑‍🏫</span>
+                    <span>Sign In as Prof. Euler</span>
+                  </button>
+                  <span className="text-[10px] text-[#7A7E89]">
+                    Owns Room CALC • Full Telemetry Access
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="h-px bg-[#DDD7CB] flex-1"></div>
+                  <span className="text-[10px] font-mono uppercase text-[#7A7E89]">OR PASSKEY</span>
+                  <div className="h-px bg-[#DDD7CB] flex-1"></div>
                 </div>
 
                 <form onSubmit={handleVerifyTeacherPin} className="flex flex-col gap-4">
@@ -963,19 +2594,31 @@ function NudgePointApp() {
 
                   <button
                     type="submit"
-                    className="btn-gallery-pill-black w-full"
+                    className="btn-gallery-pill-outline w-full"
                   >
-                    AUTHENTICATE PODIUM
+                    AUTHENTICATE WITH PIN
                   </button>
                 </form>
 
-                <button
-                  type="button"
-                  onClick={() => setActiveView('student')}
-                  className="text-xs font-mono text-[#575B66] hover:text-[#111215] underline"
-                >
-                  ← Return to Student View
-                </button>
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.hash = '#/login/teacher';
+                      setActiveView('login-teacher');
+                    }}
+                    className="text-xs font-mono text-[#111215] hover:underline"
+                  >
+                    Teacher Login Portal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('student')}
+                    className="text-xs font-mono text-[#575B66] hover:text-[#111215] underline"
+                  >
+                    ← Return to Student View
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -988,6 +2631,10 @@ function NudgePointApp() {
                   <h2 className="font-serif text-3xl font-normal text-[#111215] tracking-tight mt-1">
                     Classroom Comprehension Radar
                   </h2>
+                  <div className="text-xs text-[#575B66] mt-0.5 flex items-center gap-1.5">
+                    <span>Instructor:</span>
+                    <strong className="text-[#111215]">{currentUser ? currentUser.full_name : 'Prof. Leonhard Euler'}</strong>
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-[10px] font-mono px-3 py-1 rounded-full border ${
@@ -996,10 +2643,10 @@ function NudgePointApp() {
                     {socketConnected ? '🟢 Live WebSocket' : '🟠 Local Sync'}
                   </span>
                   <button
-                    onClick={handleLogoutTeacher}
+                    onClick={logoutUser}
                     className="text-[10px] font-mono text-[#7A7E89] hover:text-[#111215] underline"
                   >
-                    Lock 🔒
+                    Sign Out 🔒
                   </button>
                 </div>
               </div>
@@ -1018,10 +2665,6 @@ function NudgePointApp() {
                 onSelectTopic={setActiveTopic}
                 onDeployBridge={handleDeployBridge}
                 questions={questions}
-                onUpvoteQuestion={(id) => {
-                  setQuestions((prev) => prev.map((q) => q.id === id ? { ...q, upvotes: q.upvotes + 1 } : q));
-                  broadcast('UPVOTE', { id });
-                }}
                 onMarkAnswered={(id) => setQuestions((prev) => prev.map((q) => q.id === id ? { ...q, answered: true } : q))}
                 onToggleProject={(id) => {
                   const q = questions.find((item) => item.id === id);
@@ -1029,21 +2672,26 @@ function NudgePointApp() {
                   setQuestions((prev) => prev.map((item) => item.id === id ? { ...item, projected: nextVal } : item));
                   broadcast('PROJECT_QUESTION', { id, projected: nextVal });
                 }}
+                alertThreshold={alertThreshold}
+                onAlertThresholdChange={setAlertThreshold}
               />
             </div>
           )
         )}
 
-        {/* VIEW 3: DEDICATED STUDENT PHONE */}
+        {/* VIEW 3: DEDICATED STUDENT VIEW */}
         {activeView === 'student' && (
-          <div className="max-w-sm mx-auto w-full py-6">
-            <div className="gallery-panel p-8 flex flex-col justify-between min-h-[620px]">
+          <div className="max-w-4xl mx-auto w-full py-6">
+            <div className="gallery-panel p-6 sm:p-8 flex flex-col justify-between min-h-[620px]">
               <GalleryStudentComponent
                 roomCode={roomCode}
                 courseName={courseName}
                 activeTopic={activeTopic}
                 activeStudentPulse={activeStudentPulse}
                 studentToken={studentToken}
+                currentUser={currentUser}
+                onOpenAuth={() => { window.location.hash = '#/login/student'; setActiveView('login-student'); }}
+                onQuickStudentLogin={() => loginUser('alex.rivera@nudgepoint.edu', 'StudentPass123!', 'student')}
                 onSignal={handleStudentSignal}
                 onResolve={handleStudentResolve}
                 questions={questions}
@@ -1057,6 +2705,39 @@ function NudgePointApp() {
                   broadcast('UPVOTE', { id });
                 }}
                 notes={studentNotes}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 3B: STANDALONE CLASS TIMINGS */}
+        {activeView === 'timings' && (
+          <div className="max-w-4xl mx-auto w-full py-6">
+            <div className="gallery-panel p-6 sm:p-8">
+              <ClassTimingsComponent
+                roomCode={roomCode}
+                courseName={courseName}
+                activeTopic={activeTopic}
+                onBackToPulse={() => {
+                  window.location.hash = '#view=student';
+                  setActiveView('student');
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 3C: STANDALONE CLASS SYLLABUS */}
+        {activeView === 'syllabus' && (
+          <div className="max-w-4xl mx-auto w-full py-6">
+            <div className="gallery-panel p-6 sm:p-8">
+              <ClassSyllabusComponent
+                roomCode={roomCode}
+                courseName={courseName}
+                onBackToPulse={() => {
+                  window.location.hash = '#view=student';
+                  setActiveView('student');
+                }}
               />
             </div>
           </div>
@@ -1084,11 +2765,14 @@ function NudgePointApp() {
             interventions={interventions}
             questions={questions}
             totalStudents={totalStudents}
+            authToken={authToken}
+            currentUser={currentUser}
+            onOpenAuth={() => { window.location.hash = '#/login/teacher'; setActiveView('login-teacher'); }}
           />
         )}
 
         {/* SIMULATION CONSOLE (IMMERSIVE LECTURE HALL AMPHITHEATER RADAR) */}
-        {showFlightSim && (
+        {showFlightSim && isTeacherUser && !isStudentRole && (
           <section className="border-t border-[#DDD7CB] pt-10 pb-4">
             <div className="gallery-panel p-8 bg-[#F5F1EA] shadow-md border border-[#D8D1C2]">
               
@@ -1237,6 +2921,40 @@ function NudgePointApp() {
                             const roleSlug = st.role === 'Shy' ? 'shy' : st.role === 'Note Copier' ? 'note' : 'flow';
                             const personaShort = st.role === 'Shy' ? 'SHY' : st.role === 'Note Copier' ? 'NOTE' : 'FLOW';
 
+                            if (!isTeacherUser) {
+                              return (
+                                <div
+                                  key={st.id}
+                                  className={`hall-seat-card read-only cursor-default ${isLost ? 'is-lost' : 'is-flow'}`}
+                                  title={`${st.name} [Seat ${st.seat}] (${st.role}) — Student presence (Read-Only)`}
+                                >
+                                  <div className="hall-seat-top">
+                                    <span className="hall-seat-tag">{st.seat}</span>
+                                    <span className={`hall-seat-status ${isLost ? 'lost' : 'flow'}`}>
+                                      <span className="hall-seat-status-beacon"></span>
+                                      <span>{isLost ? 'LOST' : 'FLOW'}</span>
+                                    </span>
+                                  </div>
+
+                                  <div className="hall-seat-middle">
+                                    <div className={`hall-seat-avatar ${roleSlug}`}>
+                                      {st.initials}
+                                    </div>
+                                    <div className="overflow-hidden">
+                                      <span className="hall-seat-name">{st.name}</span>
+                                      <span className={`student-chip-persona persona-badge-${roleSlug}`}>
+                                        {personaShort}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="hall-seat-thought" title={st.thought}>
+                                    💭 “{st.thought}”
+                                  </div>
+                                </div>
+                              );
+                            }
+
                             return (
                               <button
                                 key={st.id}
@@ -1245,7 +2963,7 @@ function NudgePointApp() {
                                   acoustic.playTap();
                                   if (isLost) {
                                     setPulses(prev => prev.filter(p => p.studentId !== st.id));
-                                    try { broadcast('RESOLVE', { studentId: st.id }); } catch (e) {}
+                                    broadcast('RESOLVE', { studentId: st.id });
                                   } else {
                                     const p = {
                                       id: 'p_' + Date.now() + '_' + st.id,
@@ -1255,11 +2973,9 @@ function NudgePointApp() {
                                       topic: activeTopic
                                     };
                                     setPulses(prev => [...prev, p]);
-                                    try { broadcast('PULSE', p); } catch (e) {}
+                                    broadcast('PULSE', p);
                                   }
                                 }}
-                                onMouseEnter={() => setHoveredStudentId(st.id)}
-                                onMouseLeave={() => setHoveredStudentId(null)}
                                 className={`hall-seat-card ${isLost ? 'is-lost' : 'is-flow'}`}
                                 aria-pressed={isLost}
                                 title={`${st.name} [Seat ${st.seat}] (${st.role}) — Click to toggle friction`}
@@ -1308,6 +3024,16 @@ function NudgePointApp() {
         NUDGEPOINT &nbsp;—&nbsp; ZERO-LOGIN CLASSROOM PULSE RADAR
       </footer>
 
+      {/* 6. RBAC AUTHENTICATION & DEMO SWITCHER MODAL */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onLogin={loginUser}
+        onSignup={signupUser}
+        currentUser={currentUser}
+        onLogout={logoutUser}
+      />
+
     </div>
   );
 }
@@ -1329,9 +3055,10 @@ function GalleryPodiumComponent({
   onSelectTopic,
   onDeployBridge,
   questions,
-  onUpvoteQuestion,
   onMarkAnswered,
   onToggleProject,
+  alertThreshold,
+  onAlertThresholdChange,
 }) {
   const [activeSubTab, setActiveSubTab] = useState('radar');
 
@@ -1416,10 +3143,32 @@ function GalleryPodiumComponent({
             );
           })}
         </div>
+
+        {/* Alert Threshold Control */}
+        <div className="pt-4 border-t border-[#EAE6DF] flex flex-wrap items-center gap-4">
+          <label htmlFor="alert-threshold-slider" className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#7A7E89] shrink-0">
+            Alert Threshold
+          </label>
+          <input
+            id="alert-threshold-slider"
+            type="range"
+            min={5}
+            max={40}
+            step={5}
+            value={alertThreshold}
+            onChange={(e) => onAlertThresholdChange(Number(e.target.value))}
+            className="flex-1 min-w-[120px] accent-[#C4761E] cursor-pointer"
+            aria-label={`Alert threshold: ${alertThreshold}% for amber, ${alertThreshold * 2}% for red`}
+          />
+          <div className="flex items-center gap-3 text-[10px] font-mono shrink-0">
+            <span className="text-[#C4761E] font-semibold">🟡 {alertThreshold}%</span>
+            <span className="text-[#C84B42] font-semibold">🔴 {alertThreshold * 2}%</span>
+          </div>
+        </div>
       </div>
 
       {/* 2. SUB NAVIGATION PILLS */}
-      <div className="subnav-bar">
+      <div className="subnav-bar" role="tablist" aria-label="Podium dashboard sections">
         {[
           { id: 'radar', label: 'MILESTONES' },
           { id: 'bridges', label: `BRIDGE PROMPTS (${activeBridges.length})` },
@@ -1430,6 +3179,10 @@ function GalleryPodiumComponent({
             key={sTab.id}
             onClick={() => setActiveSubTab(sTab.id)}
             className={`subnav-tab-btn ${activeSubTab === sTab.id ? 'active' : ''}`}
+            role="tab"
+            aria-selected={activeSubTab === sTab.id}
+            aria-controls={`panel-${sTab.id}`}
+            id={`tab-${sTab.id}`}
           >
             {sTab.label}
           </button>
@@ -1438,7 +3191,7 @@ function GalleryPodiumComponent({
 
       {/* 3. MILESTONES TAB */}
       {activeSubTab === 'radar' && (
-        <div className="gallery-panel p-6 flex flex-col gap-3">
+        <div className="gallery-panel p-6 flex flex-col gap-3" role="tabpanel" id="panel-radar" aria-labelledby="tab-radar">
           <div className="flex items-center justify-between mb-3 border-b border-[#EAE6DF] pb-2">
             <span className="font-serif text-lg text-[#111215]">Lecture Milestones</span>
             <span className="text-xs font-mono text-[#7A7E89] uppercase tracking-wider">ACTIVE: {activeTopic}</span>
@@ -1450,7 +3203,12 @@ function GalleryPodiumComponent({
                 <li
                   key={t.id}
                   onClick={() => onSelectTopic(t.title)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectTopic(t.title); } }}
                   className={`milestone-item ${isActive ? 'active' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isActive}
+                  aria-label={`Select milestone: ${t.title} at ${t.timestamp}`}
                 >
                   <div className="flex items-center gap-4">
                     <span className="milestone-time">{t.timestamp}</span>
@@ -1617,6 +3375,9 @@ function GalleryStudentComponent({
   activeTopic,
   activeStudentPulse,
   studentToken,
+  currentUser,
+  onOpenAuth,
+  onQuickStudentLogin,
   onSignal,
   onResolve,
   questions,
@@ -1649,15 +3410,38 @@ function GalleryStudentComponent({
               <span className="text-[9px] font-mono text-[#7A7E89] uppercase tracking-[0.25em]">
                 ROOM {roomCode}
               </span>
-              {studentToken === 's1' && (
+              {currentUser ? (
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+                  🧑‍🎓 {currentUser.full_name}
+                </span>
+              ) : studentToken === 's1' ? (
                 <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#FDF1EA] text-[#B25828] border border-[#EAD1A8]">
                   SEAT E1 • SHY
                 </span>
-              )}
+              ) : null}
             </div>
             <div className="font-serif text-sm font-semibold text-[#111215] truncate" title={courseName}>
               {courseName}
             </div>
+            {!currentUser && onQuickStudentLogin && (
+              <div className="mt-1 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={onQuickStudentLogin}
+                  className="text-[10px] font-mono text-[#C4761E] hover:underline"
+                >
+                  ⚡ Join as Alex Rivera
+                </button>
+                <span className="text-[#DDD7CB]">•</span>
+                <button
+                  type="button"
+                  onClick={onOpenAuth}
+                  className="text-[10px] font-mono text-[#7A7E89] hover:text-[#111215] underline"
+                >
+                  Sign In
+                </button>
+              </div>
+            )}
           </div>
           <span className="w-2 h-2 rounded-full bg-[#2B7A4B]"></span>
         </div>
@@ -1670,11 +3454,37 @@ function GalleryStudentComponent({
             {activeTopic}
           </div>
         </div>
+
+        {/* Navigation Sub-Tabs */}
+        <div className="mt-3 flex items-center gap-1.5 p-1 rounded-xl bg-[#FAF8F5] border border-[#DDD7CB] overflow-x-auto" role="tablist" aria-label="Student Navigation">
+          {[
+            { id: 'pulse', label: '⚡ Pulse' },
+            { id: 'timings', label: '⏱️ Timings' },
+            { id: 'syllabus', label: '📋 Syllabus' },
+            { id: 'question', label: '💬 Ask' },
+            { id: 'notes', label: `📝 Log (${notes.length})` },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSubTab(tab.id)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono whitespace-nowrap transition ${
+                subTab === tab.id
+                  ? 'bg-[#1E262B] text-[#FAF8F4] font-semibold shadow-xs'
+                  : 'text-[#575B66] hover:text-[#111215] hover:bg-[#EDE8E1]'
+              }`}
+              role="tab"
+              aria-selected={subTab === tab.id}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Main Pulse Surface */}
       {subTab === 'pulse' && (
-        <div className="my-auto flex flex-col items-center text-center py-4">
+        <div className="my-auto flex flex-col items-center text-center py-4" role="tabpanel" id="student-panel-pulse" aria-labelledby="student-tab-pulse">
           
           {/* SCULPTURAL CIRCULAR HERO BUTTON */}
           <button
@@ -1724,9 +3534,32 @@ function GalleryStudentComponent({
         </div>
       )}
 
+      {/* Class Timings Tab */}
+      {subTab === 'timings' && (
+        <div className="py-2 overflow-y-auto max-h-[550px]" role="tabpanel" id="student-panel-timings" aria-labelledby="student-tab-timings">
+          <ClassTimingsComponent
+            roomCode={roomCode}
+            courseName={courseName}
+            activeTopic={activeTopic}
+            onBackToPulse={() => setSubTab('pulse')}
+          />
+        </div>
+      )}
+
+      {/* Course Syllabus Tab */}
+      {subTab === 'syllabus' && (
+        <div className="py-2 overflow-y-auto max-h-[550px]" role="tabpanel" id="student-panel-syllabus" aria-labelledby="student-tab-syllabus">
+          <ClassSyllabusComponent
+            roomCode={roomCode}
+            courseName={courseName}
+            onBackToPulse={() => setSubTab('pulse')}
+          />
+        </div>
+      )}
+
       {/* Backchannel Question View */}
       {subTab === 'question' && (
-        <div className="my-auto flex flex-col gap-4 py-2">
+        <div className="my-auto flex flex-col gap-4 py-2" role="tabpanel" id="student-panel-question" aria-labelledby="student-tab-question">
           <form onSubmit={handleAsk} className="flex flex-col gap-2">
             <input
               type="text"
@@ -1765,7 +3598,7 @@ function GalleryStudentComponent({
 
       {/* Private Notes View */}
       {subTab === 'notes' && (
-        <div className="my-auto flex flex-col gap-3 py-2 max-h-72 overflow-y-auto">
+        <div className="my-auto flex flex-col gap-3 py-2 max-h-72 overflow-y-auto" role="tabpanel" id="student-panel-notes" aria-labelledby="student-tab-notes">
           <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#7A7E89]">
             PERSONAL LOG
           </div>
@@ -1782,25 +3615,29 @@ function GalleryStudentComponent({
       )}
 
       {/* Bottom Nav Segment */}
-      <div className="pt-3 border-t border-[#DDD7CB] flex items-center justify-around text-[10px] font-mono tracking-[0.2em] uppercase">
-        <button
-          onClick={() => setSubTab('pulse')}
-          className={`transition ${subTab === 'pulse' ? 'text-[#111215] font-bold' : 'text-[#7A7E89] hover:text-[#111215]'}`}
-        >
-          PULSE
-        </button>
-        <button
-          onClick={() => setSubTab('question')}
-          className={`transition ${subTab === 'question' ? 'text-[#111215] font-bold' : 'text-[#7A7E89] hover:text-[#111215]'}`}
-        >
-          ASK
-        </button>
-        <button
-          onClick={() => setSubTab('notes')}
-          className={`transition ${subTab === 'notes' ? 'text-[#111215] font-bold' : 'text-[#7A7E89] hover:text-[#111215]'}`}
-        >
-          LOG ({notes.length})
-        </button>
+      <div className="pt-3 border-t border-[#DDD7CB] flex items-center justify-around text-[10px] font-mono tracking-[0.16em] uppercase overflow-x-auto gap-1" role="tablist" aria-label="Student view tabs">
+        {[
+          { id: 'pulse', label: 'PULSE' },
+          { id: 'timings', label: 'TIMINGS' },
+          { id: 'syllabus', label: 'SYLLABUS' },
+          { id: 'question', label: 'ASK' },
+          { id: 'notes', label: `LOG (${notes.length})` },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setSubTab(tab.id)}
+            className={`py-1 px-2.5 rounded transition whitespace-nowrap ${
+              subTab === tab.id
+                ? 'text-[#111215] font-bold bg-[#E5DFD5]'
+                : 'text-[#7A7E89] hover:text-[#111215]'
+            }`}
+            role="tab"
+            aria-selected={subTab === tab.id}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
     </div>
@@ -1937,11 +3774,67 @@ function GalleryAnalyticsComponent({
   interventions,
   questions,
   totalStudents,
+  authToken,
+  currentUser,
+  onOpenAuth,
 }) {
   const [downloaded, setDownloaded] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+
+  // Fetch live analytics from the server REST endpoint with RBAC bearer token
+  useEffect(() => {
+    setAnalyticsLoading(true);
+    setAuthError(null);
+    const headers = {};
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+    fetch(`/api/sessions/${roomCode}/analytics`, { headers })
+      .then(async (r) => {
+        if (r.status === 401) {
+          setAuthError('Authentication required: Sign in as the room instructor to view historical session analytics.');
+          return null;
+        }
+        if (r.status === 403) {
+          setAuthError('Access Denied: Only the verified instructor who owns this room can view aggregate telemetry and debrief reports.');
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
+      .then((data) => {
+        if (data) setAnalyticsData(data);
+        setAnalyticsLoading(false);
+      })
+      .catch(() => {
+        setAnalyticsLoading(false);
+      });
+  }, [roomCode, authToken]);
 
   const total = pulses.length;
   const stepCount = pulses.filter((p) => p.tag === 'step').length;
+
+  // Derived display values: prefer server data, fall back to in-memory
+  const totalPulsesDisplay = analyticsData ? analyticsData.totalPulses : total;
+  const hardestTopicDisplay = analyticsData ? analyticsData.hardestTopic : (
+    topics.reduce((best, t) => {
+      const count = pulses.filter((p) => p.topic === t.title).length;
+      return count > (best.count || 0) ? { title: t.title, count } : best;
+    }, {}).title || 'N/A'
+  );
+  const dominantTagDisplay = analyticsData ? analyticsData.dominantFactor : (
+    total > 0
+      ? Object.entries(
+          pulses.reduce((acc, p) => { acc[p.tag] = (acc[p.tag] || 0) + 1; return acc; }, {})
+        ).sort((a, b) => b[1] - a[1])[0]?.[0] || 'step'
+      : 'step'
+  );
+  const dominantPct = totalPulsesDisplay > 0
+    ? Math.round(((analyticsData?.tagDistribution?.[dominantTagDisplay] || stepCount) / totalPulsesDisplay) * 100)
+    : 0;
+  const interventionsCountDisplay = analyticsData ? analyticsData.totalInterventions : interventions.length;
+  // Flow index: % of 90s window where no friction signals fired (rough proxy)
+  const flowIndex = totalStudents > 0 ? Math.max(0, Math.round(100 - (total / Math.max(1, totalStudents)) * 100)) : 100;
 
   const handleExport = () => {
     const md = `# NudgePoint Debrief Report — ${courseName} (Room ${roomCode})
@@ -1973,6 +3866,41 @@ ${questions.map((q) => `- [${q.upvotes} votes] ${q.text}`).join('\n')}
     setTimeout(() => setDownloaded(false), 2000);
   };
 
+  const handleExportCSV = () => {
+    // Header row
+    const rows = [
+      ['timestamp_iso', 'topic', 'tag', 'student_id', 'room'].join(','),
+      ...pulses.map((p) => [
+        new Date(p.timestamp).toISOString(),
+        `"${(p.topic || '').replace(/"/g, '""')}"`,
+        p.tag || '',
+        p.studentId || '',
+        roomCode,
+      ].join(','))
+    ];
+    // Questions section
+    rows.push('');
+    rows.push(['question_id', 'text', 'upvotes', 'timestamp_iso'].join(','));
+    questions.forEach((q) => {
+      rows.push([
+        q.id,
+        `"${(q.text || '').replace(/"/g, '""')}"`,
+        q.upvotes,
+        new Date(q.timestamp).toISOString(),
+      ].join(','));
+    });
+
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `NudgePoint_${roomCode}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col gap-8">
       
@@ -1986,34 +3914,81 @@ ${questions.map((q) => `- [${q.upvotes} votes] ${q.text}`).join('\n')}
           </h2>
         </div>
 
-        <button
-          onClick={handleExport}
-          className="btn-gallery-pill-black !py-2 !px-6 text-[10px]"
-        >
-          {downloaded ? 'DOWNLOADED MARKDOWN' : 'EXPORT MARKDOWN'}
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={handleExportCSV}
+            className="btn-gallery-pill-outline !py-2 !px-6 text-[10px]"
+            aria-label="Export session data as CSV spreadsheet"
+          >
+            EXPORT CSV
+          </button>
+          <button
+            onClick={handleExport}
+            className="btn-gallery-pill-black !py-2 !px-6 text-[10px]"
+            aria-label="Export session summary as Markdown report"
+          >
+            {downloaded ? 'DOWNLOADED MARKDOWN' : 'EXPORT MARKDOWN'}
+          </button>
+        </div>
       </div>
+
+      {/* RBAC Authorization Guard Notice */}
+      {authError && (
+        <div className="p-6 rounded-2xl bg-[#FAF8F4] border border-[#EAD1A8] text-center max-w-xl mx-auto shadow-sm flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#111215] text-white flex items-center justify-center text-lg">
+            🔒
+          </div>
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#7A7E89] block mb-1">
+              TEACHER RBAC RESTRICTION
+            </span>
+            <div className="font-serif text-xl text-[#111215]">
+              Instructor Access Protected
+            </div>
+            <p className="text-xs text-[#575B66] mt-1.5 leading-relaxed max-w-md">
+              {authError}
+            </p>
+          </div>
+          <button
+            onClick={onOpenAuth}
+            className="btn-gallery-pill-black !py-2 !px-5 text-xs font-mono mt-1"
+          >
+            🔑 Sign In as Prof. Euler
+          </button>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: 'Flow Index', val: '86%', sub: 'Lecture in flow' },
-          { label: 'Peak Friction', val: 'Topic 3', sub: 'Minute 18:40' },
-          { label: 'Primary Cause', val: 'Step Transition', sub: '58% of pulses' },
-          { label: 'Interventions', val: `${interventions.length} Deployed`, sub: 'Bridges used' },
-        ].map((m, idx) => (
-          <div key={idx} className="gallery-panel p-6">
-            <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#7A7E89] block">
-              {m.label}
-            </span>
-            <div className="font-serif text-2xl font-normal text-[#111215] mt-1">
-              {m.val}
+        {analyticsLoading ? (
+          // Loading shimmer
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="gallery-panel p-6 animate-pulse">
+              <div className="h-2 w-16 bg-[#DDD7CB] rounded mb-3" />
+              <div className="h-6 w-24 bg-[#DDD7CB] rounded mb-1" />
+              <div className="h-2 w-20 bg-[#DDD7CB] rounded" />
             </div>
-            <span className="text-[10px] font-mono text-[#7A7E89] block mt-0.5">
-              {m.sub}
-            </span>
-          </div>
-        ))}
+          ))
+        ) : (
+          [
+            { label: 'Flow Index', val: `${flowIndex}%`, sub: 'Est. lecture flow' },
+            { label: 'Peak Friction', val: hardestTopicDisplay.length > 20 ? hardestTopicDisplay.slice(0, 20) + '…' : (hardestTopicDisplay || 'N/A'), sub: 'Highest friction topic' },
+            { label: 'Primary Cause', val: dominantTagDisplay ? dominantTagDisplay.charAt(0).toUpperCase() + dominantTagDisplay.slice(1) : 'N/A', sub: `${dominantPct}% of pulses` },
+            { label: 'Interventions', val: `${interventionsCountDisplay} Deployed`, sub: 'Bridges used' },
+          ].map((m, idx) => (
+            <div key={idx} className="gallery-panel p-6">
+              <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#7A7E89] block">
+                {m.label}
+              </span>
+              <div className="font-serif text-2xl font-normal text-[#111215] mt-1">
+                {m.val}
+              </div>
+              <span className="text-[10px] font-mono text-[#7A7E89] block mt-0.5">
+                {m.sub}
+              </span>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Timeline Breakdown */}
@@ -2106,8 +4081,12 @@ function GallerySparkline({ pulses, windowDurationSec, statusColor }) {
   }, [pulses, windowDurationSec, statusColor]);
 
   return (
-    <div className="w-full h-12 pt-1">
-      <canvas ref={canvasRef} width={600} height={48} className="w-full h-full block" />
+    <div
+      className="w-full h-12 pt-1"
+      role="img"
+      aria-label={`Friction velocity sparkline: ${pulses.length} pulse events recorded in the last ${windowDurationSec} seconds`}
+    >
+      <canvas ref={canvasRef} width={600} height={48} className="w-full h-full block" aria-hidden="true" />
     </div>
   );
 }

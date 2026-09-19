@@ -4,9 +4,16 @@ import urllib.request
 import json
 import asyncio
 import websockets
-import base64
 import os
+import base64
+import sys
 import shutil
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 temp_dir = os.path.join(os.environ.get('TEMP', '.'), f'np_chrome_inspect_{int(time.time())}')
 os.makedirs(temp_dir, exist_ok=True)
@@ -15,6 +22,7 @@ chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
 cmd = [
     chrome_path,
     '--headless=new',
+    '--disable-extensions',
     f'--user-data-dir={temp_dir}',
     '--remote-debugging-port=9222',
     '--disable-gpu',
@@ -73,7 +81,7 @@ try:
             pump_task = asyncio.create_task(pump())
 
             await send_cmd('Runtime.enable')
-            await asyncio.sleep(4)
+            await asyncio.sleep(6)
 
             # Check lecture hall amphitheater elements
             eval_res = await send_cmd('Runtime.evaluate', {
