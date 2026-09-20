@@ -372,11 +372,11 @@ body {
 }
 
 .gallery-nuance-pill.active {
-  background: #F5ECE0;
-  border-color: #C4761E;
-  color: #9A5B0F;
+  background: #111215;
+  border-color: #111215;
+  color: #FAF8F4;
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(196, 118, 30, 0.12);
+  box-shadow: 0 2px 8px rgba(17, 18, 21, 0.15);
 }
 
 /* Sub-Navigation Tabs */

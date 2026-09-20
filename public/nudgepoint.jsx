@@ -3390,6 +3390,7 @@ function GalleryStudentComponent({
 }) {
   const [subTab, setSubTab] = useState('pulse');
   const [chosenFactor, setChosenFactor] = useState('step');
+  const [showNuance, setShowNuance] = useState(false);
   const [qText, setQText] = useState('');
 
   const isSignaled = !!activeStudentPulse;
@@ -3509,35 +3510,79 @@ function GalleryStudentComponent({
             </span>
           </button>
 
-          {/* Resolution Action */}
+          {/* Resolution & Progressive Nuance Actions */}
           {isSignaled ? (
-            <div className="mt-8 w-full flex flex-col gap-2">
-              <button
-                onClick={onResolve}
-                className="btn-gallery-pill-black w-full"
-              >
-                RESOLVED — I GET IT
-              </button>
-              <span className="text-[10px] font-mono text-[#575B66]">
-                Clears friction from podium radar
-              </span>
+            <div className="mt-8 w-full flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={onResolve}
+                  className="btn-gallery-pill-black w-full"
+                >
+                  RESOLVED — I GET IT
+                </button>
+                <span className="text-[10px] font-mono text-[#575B66]">
+                  Clears friction from podium radar
+                </span>
+              </div>
+
+              {/* Anchored Nuance Modifier Card */}
+              <div className="p-3.5 rounded-2xl bg-[#F4EFE7] border border-[#DDD7CB] shadow-xs">
+                <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#575B66] block mb-2 font-medium">
+                  Refine Reason for Stalling:
+                </span>
+                <div className="flex flex-wrap justify-center gap-1.5" role="group" aria-label="Nuance categories">
+                  {FRICTION_TAGS.map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => {
+                        setChosenFactor(tag.id);
+                        onSignal(tag.id);
+                      }}
+                      className={`gallery-nuance-pill ${chosenFactor === tag.id ? 'active' : ''}`}
+                      aria-pressed={chosenFactor === tag.id}
+                    >
+                      {tag.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="mt-8 w-full">
-              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#575B66] block mb-2">
-                NUANCE CATEGORY
-              </span>
-              <div className="flex flex-wrap justify-center gap-1.5">
-                {FRICTION_TAGS.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => setChosenFactor(tag.id)}
-                    className={`gallery-nuance-pill ${chosenFactor === tag.id ? 'active' : ''}`}
-                  >
-                    {tag.label}
-                  </button>
-                ))}
-              </div>
+            <div className="mt-6 w-full flex flex-col items-center">
+              {/* Progressive Disclosure Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowNuance(!showNuance)}
+                className="btn-gallery-link text-xs text-[#575B66] hover:text-[#111215] inline-flex items-center gap-1.5 py-1 px-2.5 rounded-md"
+                aria-expanded={showNuance}
+                aria-controls="nuance-category-container"
+              >
+                <span>{showNuance ? '▴ Hide Friction Reason' : '▾ Specific friction reason (optional)'}</span>
+              </button>
+
+              {/* Anchored Nuance Modifier Card */}
+              {showNuance && (
+                <div id="nuance-category-container" className="mt-3 w-full max-w-md p-4 rounded-2xl bg-[#F4EFE7] border border-[#DDD7CB] shadow-xs">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#575B66] block mb-2.5 font-medium text-center">
+                    Select Specific Nuance
+                  </span>
+                  <div className="flex flex-wrap justify-center gap-1.5" role="group" aria-label="Nuance categories">
+                    {FRICTION_TAGS.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => setChosenFactor(tag.id)}
+                        className={`gallery-nuance-pill ${chosenFactor === tag.id ? 'active' : ''}`}
+                        aria-pressed={chosenFactor === tag.id}
+                      >
+                        {tag.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
