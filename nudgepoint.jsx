@@ -2393,11 +2393,11 @@ function NudgePointApp() {
 
           {/* Scroll Down Indicator (WCAG 1.4.3 & 1.1.1 compliant) */}
           <div
-            className="text-xs font-mono tracking-[0.25em] uppercase text-[#575B66] flex flex-col items-center gap-1"
+            className="mt-6 mb-2 flex flex-col items-center gap-1.5 text-xs font-mono tracking-[0.25em] uppercase text-[#575B66]"
             aria-label="Scroll down to view interactive classroom radar"
           >
-            <span>SCROLL</span>
-            <span className="text-xs" aria-hidden="true">↓</span>
+            <span className="font-semibold text-[11px] tracking-[0.3em]">SCROLL</span>
+            <span className="text-base animate-bounce leading-none" aria-hidden="true">↓</span>
           </div>
 
         </div>
