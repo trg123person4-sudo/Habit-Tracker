@@ -117,13 +117,13 @@ const FRICTION_TAGS = [
   { id: 'pace', label: 'Pacing Too Fast', desc: 'Need 30 seconds to catch up notes' },
   { id: 'example', label: 'Concrete Example', desc: 'Abstract theorem needs real values' },
   { id: 'notation', label: 'Notation Ambiguity', desc: 'Clarify symbol or operator' },
-  { id: 'unclear', label: 'Visual Unclear', desc: 'Chalk glare or microphone audio' },
+  { id: 'unclear', label: 'Unclear Visuals', desc: 'Chalk glare or microphone audio' },
 ];
 
 const LECTURE_MILESTONES = [
   { id: 'm1', title: '1. Review: Slope & Tangent Lines', timestamp: '00:00' },
   { id: 'm2', title: '2. Formal Definition of the Derivative', timestamp: '07:15' },
-  { id: 'm3', title: '3. Step 3: Algebraic Conjugate Substitution', timestamp: '18:40' },
+  { id: 'm3', title: 'Step 3: Algebraic Conjugate Substitution', timestamp: '18:40' },
   { id: 'm4', title: '4. Chain Rule with Trigonometric Functions', timestamp: '31:20' },
   { id: 'm5', title: '5. Real-World Velocity Application', timestamp: '42:10' },
 ];
@@ -172,7 +172,7 @@ const PEDAGOGICAL_BRIDGES = {
 };
 
 const SOCRATIC_BREAKDOWNS = {
-  '3. Step 3: Algebraic Conjugate Substitution': {
+  'Step 3: Algebraic Conjugate Substitution': {
     analogy: "Conjugate multiplication is like multiplying by 1. The value remains unchanged, but the radical moves from denominator to numerator.",
     microStep: "Line 2.5: Multiply numerator & denominator by [√(x+h) + √x]. The top expands to [(x+h) - x] = h. Then h in the numerator cancels with h in denominator.",
     boundaryCheck: "If h = 0 before canceling, the expression yields 0/0 (indeterminate). After cancellation, setting h = 0 cleanly gives 1 / (2√x)."
@@ -1229,7 +1229,7 @@ function ClassTimingsComponent({ roomCode, courseName, activeTopic, onBackToPuls
             {[
               { id: 'm1', time: '10:00 – 10:07', duration: '7 min', title: '1. Review: Slope & Tangent Lines', status: 'completed', desc: 'Recap of secant line limits and algebraic difference quotients.' },
               { id: 'm2', time: '10:07 – 10:18', duration: '11 min', title: '2. Formal Definition of the Derivative', status: 'completed', desc: 'Establishing f\'(x) = lim h→0 [f(x+h) - f(x)]/h.' },
-              { id: 'm3', time: '10:18 – 10:31', duration: '13 min', title: '3. Step 3: Algebraic Conjugate Substitution', status: 'active', desc: 'Conjugate expansion [√(x+h) + √x] and eliminating h in denominator.' },
+              { id: 'm3', time: '10:18 – 10:31', duration: '13 min', title: 'Step 3: Algebraic Conjugate Substitution', status: 'active', desc: 'Conjugate expansion [√(x+h) + √x] and eliminating h in denominator.' },
               { id: 'm4', time: '10:31 – 10:45', duration: '14 min', title: '4. Chain Rule with Trigonometric Functions', status: 'upcoming', desc: 'Composing outer derivative with inner rate of change: d/dx[sin(g(x))].' },
               { id: 'm5', time: '10:45 – 11:30', duration: '45 min', title: '5. Real-World Velocity Application & Synthesis', status: 'upcoming', desc: 'Projectile trajectory velocity vectors and open backchannel Q&A.' }
             ].map((m) => (
@@ -1542,7 +1542,7 @@ function NudgePointApp() {
   }, []);
 
   const [courseName] = useState('MATH 201: Multivariable Calculus');
-  const [activeTopic, setActiveTopic] = useState('3. Step 3: Algebraic Conjugate Substitution');
+  const [activeTopic, setActiveTopic] = useState('Step 3: Algebraic Conjugate Substitution');
   const [topics] = useState(LECTURE_MILESTONES);
   const [windowDurationSec] = useState(90);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -1552,12 +1552,12 @@ function NudgePointApp() {
 
   const [students] = useState(SIMULATION_ROSTER);
   const [pulses, setPulses] = useState([
-    { id: 'p1', studentId: 's1', timestamp: Date.now() - 35000, tag: 'step', topic: '3. Step 3: Algebraic Conjugate Substitution' },
-    { id: 'p2', studentId: 's2', timestamp: Date.now() - 30000, tag: 'step', topic: '3. Step 3: Algebraic Conjugate Substitution' },
-    { id: 'p3', studentId: 's5', timestamp: Date.now() - 22000, tag: 'pace', topic: '3. Step 3: Algebraic Conjugate Substitution' },
-    { id: 'p4', studentId: 's9', timestamp: Date.now() - 14000, tag: 'step', topic: '3. Step 3: Algebraic Conjugate Substitution' },
-    { id: 'p5', studentId: 's13', timestamp: Date.now() - 6000, tag: 'example', topic: '3. Step 3: Algebraic Conjugate Substitution' },
-    { id: 'p6', studentId: 's18', timestamp: Date.now() - 2000, tag: 'step', topic: '3. Step 3: Algebraic Conjugate Substitution' },
+    { id: 'p1', studentId: 's1', timestamp: Date.now() - 35000, tag: 'step', topic: 'Step 3: Algebraic Conjugate Substitution' },
+    { id: 'p2', studentId: 's2', timestamp: Date.now() - 30000, tag: 'step', topic: 'Step 3: Algebraic Conjugate Substitution' },
+    { id: 'p3', studentId: 's5', timestamp: Date.now() - 22000, tag: 'pace', topic: 'Step 3: Algebraic Conjugate Substitution' },
+    { id: 'p4', studentId: 's9', timestamp: Date.now() - 14000, tag: 'step', topic: 'Step 3: Algebraic Conjugate Substitution' },
+    { id: 'p5', studentId: 's13', timestamp: Date.now() - 6000, tag: 'example', topic: 'Step 3: Algebraic Conjugate Substitution' },
+    { id: 'p6', studentId: 's18', timestamp: Date.now() - 2000, tag: 'step', topic: 'Step 3: Algebraic Conjugate Substitution' },
   ]);
 
   const [questions, setQuestions] = useState([
@@ -2418,7 +2418,7 @@ function NudgePointApp() {
             <div className="flex items-center gap-3">
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: radarStatus.color }} aria-hidden="true"></span>
               <span className="tracking-wide font-semibold text-sm">
-                {radarStatus.icon} {radarStatus.label} — {frictionRate}% friction active
+                {radarStatus.icon} {radarStatus.label} — {frictionRate}% friction detected
               </span>
               <span className="hidden sm:inline text-[#78716C]">
                 ({frictionCount} of {totalStudents} students signaling within 90s window)
