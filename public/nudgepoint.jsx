@@ -2391,10 +2391,13 @@ function NudgePointApp() {
             )}
           </div>
 
-          {/* Scroll Down Indicator */}
-          <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-[#8C909C] flex flex-col items-center gap-1">
+          {/* Scroll Down Indicator (WCAG 1.4.3 & 1.1.1 compliant) */}
+          <div
+            className="text-xs font-mono tracking-[0.25em] uppercase text-[#575B66] flex flex-col items-center gap-1"
+            aria-label="Scroll down to view interactive classroom radar"
+          >
             <span>SCROLL</span>
-            <span className="text-xs">↓</span>
+            <span className="text-xs" aria-hidden="true">↓</span>
           </div>
 
         </div>
@@ -3020,7 +3023,7 @@ function NudgePointApp() {
       </main>
 
       {/* GALLERY MINIMAL FOOTER */}
-      <footer className="relative z-10 border-t border-[#EAE6DF] py-8 px-6 text-center text-xs text-[#7A7E89] font-mono tracking-[0.18em] uppercase">
+      <footer className="relative z-10 border-t border-[#EAE6DF] py-8 px-6 text-center text-xs text-[#575B66] font-mono tracking-[0.18em] uppercase">
         NUDGEPOINT &nbsp;—&nbsp; ZERO-LOGIN CLASSROOM PULSE RADAR
       </footer>
 
@@ -3407,7 +3410,7 @@ function GalleryStudentComponent({
         <div className="flex items-center justify-between pb-3 border-b border-[#EAE6DF]">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[9px] font-mono text-[#7A7E89] uppercase tracking-[0.25em]">
+              <span className="text-[10px] font-mono text-[#575B66] uppercase tracking-[0.25em]">
                 ROOM {roomCode}
               </span>
               {currentUser ? (
@@ -3437,7 +3440,7 @@ function GalleryStudentComponent({
                 <button
                   type="button"
                   onClick={onOpenAuth}
-                  className="btn-gallery-link text-xs py-1 px-2 rounded-md hover:text-[#111215]"
+                  className="btn-gallery-link text-xs py-1 px-2 rounded-md text-[#575B66] hover:text-[#111215]"
                 >
                   Sign In
                 </button>
@@ -3447,9 +3450,9 @@ function GalleryStudentComponent({
           <span className="w-2 h-2 rounded-full bg-[#2B7A4B]"></span>
         </div>
 
-        {/* Streamlined Milestone Box (Issue 4 & 9) */}
+        {/* Streamlined Milestone Box (WCAG contrast compliant) */}
         <div className="mt-2.5 py-1.5 px-3 rounded-lg bg-[#F3EFEA] flex items-center justify-between gap-3 text-xs">
-          <span className="text-[11px] font-mono font-medium text-[#767B87] tracking-wider shrink-0">
+          <span className="text-[11px] font-mono font-medium text-[#575B66] tracking-wider shrink-0">
             Current Milestone:
           </span>
           <span className="font-sans font-semibold text-[#111215] truncate text-right">
@@ -3457,7 +3460,7 @@ function GalleryStudentComponent({
           </span>
         </div>
 
-        {/* Primary Elevated Navigation Sub-Tabs */}
+        {/* Primary Elevated Navigation Sub-Tabs (ARIA connected) */}
         <div className="mt-3 flex items-center gap-1.5 p-1.5 rounded-xl bg-[#FAF8F5] border border-[#DDD7CB] overflow-x-auto" role="tablist" aria-label="Student Navigation">
           {[
             { id: 'pulse', label: '⚡ Pulse' },
@@ -3468,6 +3471,7 @@ function GalleryStudentComponent({
           ].map(tab => (
             <button
               key={tab.id}
+              id={`student-tab-${tab.id}`}
               type="button"
               onClick={() => setSubTab(tab.id)}
               className={`px-3.5 py-2 rounded-lg text-xs font-mono font-medium whitespace-nowrap transition-all ${
@@ -3477,6 +3481,7 @@ function GalleryStudentComponent({
               }`}
               role="tab"
               aria-selected={subTab === tab.id}
+              aria-controls={`student-panel-${tab.id}`}
             >
               {tab.label}
             </button>
@@ -3499,7 +3504,7 @@ function GalleryStudentComponent({
             <span className="font-serif text-xl font-normal tracking-tight uppercase">
               {isSignaled ? 'LOST HERE' : 'LOST HERE'}
             </span>
-            <span className={`text-[10px] mt-1 font-mono tracking-wider max-w-[110px] leading-tight ${isSignaled ? 'text-zinc-300' : 'text-[#7A7E89]'}`}>
+            <span className={`text-[10px] mt-1 font-mono tracking-wider max-w-[110px] leading-tight ${isSignaled ? 'text-zinc-300' : 'text-[#575B66]'}`}>
               {isSignaled ? 'SIGNAL ACTIVE' : 'TAP TO SIGNAL'}
             </span>
           </button>
@@ -3513,13 +3518,13 @@ function GalleryStudentComponent({
               >
                 RESOLVED — I GET IT
               </button>
-              <span className="text-[10px] font-mono text-[#7A7E89]">
+              <span className="text-[10px] font-mono text-[#575B66]">
                 Clears friction from podium radar
               </span>
             </div>
           ) : (
             <div className="mt-8 w-full">
-              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#7A7E89] block mb-2">
+              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#575B66] block mb-2">
                 NUANCE CATEGORY
               </span>
               <div className="flex flex-wrap justify-center gap-1.5">

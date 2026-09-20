@@ -15,8 +15,8 @@
 
   --text-primary: #111215;
   --text-secondary: #424650;
-  --text-muted: #767B87;
-  --text-accent: #B86714;
+  --text-muted: #575B66;
+  --text-accent: #8F4E02;
   --text-inverse: #FAF8F4;
 
   --text-ink: #111215;
@@ -124,7 +124,8 @@ body {
 
 /* Gallery Glassmorphism Header */
 .gallery-header {
-  background: rgba(237, 232, 225, 0.92);
+  background-color: #EDE8E1;
+  background: rgba(237, 232, 225, 0.95);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(221, 215, 203, 0.85);
@@ -139,7 +140,7 @@ body {
   font-family: var(--font-mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: #424650;
   transition: all 0.2s ease;
   padding: 8px 16px;
   min-height: 36px;
