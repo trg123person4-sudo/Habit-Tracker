@@ -2238,8 +2238,8 @@ function NudgePointApp() {
             </span>
           </div>
 
-          {/* Centered Spaced-out Nav Links */}
-          <nav className="hidden md:flex items-center gap-2 lg:gap-3 gallery-nav" aria-label="Primary Navigation">
+          {/* Centered Spaced-out Nav Links (24-32px spacing) */}
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 gallery-nav" aria-label="Primary Navigation">
             {(currentUser && currentUser.role === 'student'
               ? [
                   { id: 'student', label: 'STUDENT PULSE' },
@@ -2269,15 +2269,15 @@ function NudgePointApp() {
             ))}
           </nav>
 
-          {/* Right Action Button (Pill) & User Role Status */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Action Button (Pill) & User Role Status — Standardized 36px Baseline Height */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className="gallery-nav-btn hidden sm:inline-flex"
+              className="gallery-nav-btn h-9 px-3.5 hidden sm:inline-flex items-center justify-center"
             >
               {soundEnabled ? 'AUDIO: ON' : 'AUDIO: OFF'}
             </button>
-            <div className="rounded-full px-4 py-2 border border-[#CBC4B5] bg-[#F1EDE5] text-[11px] font-mono tracking-[0.18em] uppercase text-[#111215] font-medium shadow-xs whitespace-nowrap shrink-0">
+            <div className="rounded-full h-9 px-4 border border-[#CBC4B5] bg-[#F1EDE5] text-[11px] font-mono tracking-[0.18em] uppercase text-[#111215] font-medium shadow-xs whitespace-nowrap shrink-0 inline-flex items-center justify-center">
               ROOM: {roomCode}
             </div>
 
@@ -2285,7 +2285,7 @@ function NudgePointApp() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setAuthModalOpen(true)}
-                  className="rounded-full px-3.5 py-1.5 border border-[#111215] bg-[#111215] text-[#FAF8F4] text-[11px] font-sans font-medium hover:bg-[#383B42] transition flex items-center gap-1.5 shadow-xs shrink-0"
+                  className="rounded-full h-9 px-3.5 border border-[#111215] bg-[#111215] text-[#FAF8F4] text-[11px] font-sans font-medium hover:bg-[#383B42] transition inline-flex items-center gap-1.5 shadow-xs shrink-0"
                   title="Account Settings & Role Switcher"
                 >
                   <span>{currentUser.role === 'teacher' ? '🧑‍🏫' : '🧑‍🎓'}</span>
@@ -2306,7 +2306,7 @@ function NudgePointApp() {
                   window.location.hash = '#/login';
                   setActiveView('login-chooser');
                 }}
-                className="btn-gallery-pill-black btn-sm shrink-0"
+                className="btn-gallery-pill-black btn-sm h-9 px-4 shrink-0 inline-flex items-center justify-center"
               >
                 🔑 SIGN IN
               </button>
@@ -2414,8 +2414,8 @@ function NudgePointApp() {
           <div className="max-w-6xl mx-auto flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-3">
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: radarStatus.color }} aria-hidden="true"></span>
-              <span className="tracking-[0.16em] uppercase font-semibold">
-                {radarStatus.icon} {radarStatus.label} — {frictionRate}% FRICTION ACTIVE
+              <span className="tracking-wide font-semibold text-sm">
+                {radarStatus.icon} {radarStatus.label} — {frictionRate}% friction active
               </span>
               <span className="hidden sm:inline text-[#78716C]">
                 ({frictionCount} of {totalStudents} students signaling within 90s window)
@@ -2424,9 +2424,9 @@ function NudgePointApp() {
             {isTeacherUser && !isStudentRole && (
               <button
                 onClick={simCascadeRecovery}
-                className="tracking-[0.14em] uppercase font-semibold text-[#B45309] hover:text-[#78350F] underline underline-offset-4 transition"
+                className="tracking-wider font-semibold text-[#B45309] hover:text-[#78350F] underline underline-offset-4 transition"
               >
-                RESOLVE ALL →
+                Resolve all →
               </button>
             )}
           </div>
