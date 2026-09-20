@@ -2239,7 +2239,7 @@ function NudgePointApp() {
           </div>
 
           {/* Centered Spaced-out Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 gallery-nav">
+          <nav className="hidden md:flex items-center gap-2 lg:gap-3 gallery-nav" aria-label="Primary Navigation">
             {(currentUser && currentUser.role === 'student'
               ? [
                   { id: 'student', label: 'STUDENT PULSE' },
@@ -2294,7 +2294,7 @@ function NudgePointApp() {
                 </button>
                 <button
                   onClick={logoutUser}
-                  className="text-[10px] font-mono text-[#7A7E89] hover:text-[#111215] underline hidden lg:inline"
+                  className="btn-gallery-link hidden lg:inline"
                   title="Sign Out"
                 >
                   Sign Out
@@ -2306,7 +2306,7 @@ function NudgePointApp() {
                   window.location.hash = '#/login';
                   setActiveView('login-chooser');
                 }}
-                className="btn-gallery-pill-black !py-1.5 !px-3.5 text-[10px] font-mono tracking-wider shrink-0"
+                className="btn-gallery-pill-black btn-sm shrink-0"
               >
                 🔑 SIGN IN
               </button>
@@ -2321,8 +2321,8 @@ function NudgePointApp() {
         <div className="max-w-4xl mx-auto flex flex-col items-center">
           
           {/* Eyebrow */}
-          <span className="text-[11px] font-mono uppercase tracking-[0.35em] text-[#7A7E89] mb-4">
-            C L A S S R O O M &nbsp; P U L S E &nbsp; R A D A R
+          <span className="text-xs sm:text-sm font-mono uppercase tracking-[0.2em] text-[#767B87] mb-4 font-medium">
+            CLASSROOM PULSE RADAR
           </span>
 
           {/* Monumental Hero Headline */}
@@ -3424,19 +3424,20 @@ function GalleryStudentComponent({
               {courseName}
             </div>
             {!currentUser && onQuickStudentLogin && (
-              <div className="mt-1 flex items-center gap-1.5">
+              <div className="mt-2 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={onQuickStudentLogin}
-                  className="text-[10px] font-mono text-[#C4761E] hover:underline"
+                  className="btn-gallery-link accent font-semibold text-xs py-1 px-2 rounded-md hover:bg-[#F5ECE0]"
+                  aria-label="Quick login as student Alex Rivera"
                 >
                   ⚡ Join as Alex Rivera
                 </button>
-                <span className="text-[#DDD7CB]">•</span>
+                <span className="h-3 w-px bg-[#DDD7CB]" aria-hidden="true"></span>
                 <button
                   type="button"
                   onClick={onOpenAuth}
-                  className="text-[10px] font-mono text-[#7A7E89] hover:text-[#111215] underline"
+                  className="btn-gallery-link text-xs py-1 px-2 rounded-md hover:text-[#111215]"
                 >
                   Sign In
                 </button>
@@ -3446,17 +3447,18 @@ function GalleryStudentComponent({
           <span className="w-2 h-2 rounded-full bg-[#2B7A4B]"></span>
         </div>
 
-        <div className="mt-3 p-3 rounded-xl bg-[#FAF8F5] border border-[#EAE6DF]">
-          <span className="text-[9px] font-mono text-[#7A7E89] uppercase tracking-[0.2em] block">
-            CURRENT MILESTONE
+        {/* Streamlined Milestone Box (Issue 4 & 9) */}
+        <div className="mt-2.5 py-1.5 px-3 rounded-lg bg-[#F3EFEA] flex items-center justify-between gap-3 text-xs">
+          <span className="text-[11px] font-mono font-medium text-[#767B87] tracking-wider shrink-0">
+            Current Milestone:
           </span>
-          <div className="text-xs font-medium text-[#111215] truncate mt-0.5">
+          <span className="font-sans font-semibold text-[#111215] truncate text-right">
             {activeTopic}
-          </div>
+          </span>
         </div>
 
-        {/* Navigation Sub-Tabs */}
-        <div className="mt-3 flex items-center gap-1.5 p-1 rounded-xl bg-[#FAF8F5] border border-[#DDD7CB] overflow-x-auto" role="tablist" aria-label="Student Navigation">
+        {/* Primary Elevated Navigation Sub-Tabs */}
+        <div className="mt-3 flex items-center gap-1.5 p-1.5 rounded-xl bg-[#FAF8F5] border border-[#DDD7CB] overflow-x-auto" role="tablist" aria-label="Student Navigation">
           {[
             { id: 'pulse', label: '⚡ Pulse' },
             { id: 'timings', label: '⏱️ Timings' },
@@ -3468,10 +3470,10 @@ function GalleryStudentComponent({
               key={tab.id}
               type="button"
               onClick={() => setSubTab(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono whitespace-nowrap transition ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-mono font-medium whitespace-nowrap transition-all ${
                 subTab === tab.id
-                  ? 'bg-[#1E262B] text-[#FAF8F4] font-semibold shadow-xs'
-                  : 'text-[#575B66] hover:text-[#111215] hover:bg-[#EDE8E1]'
+                  ? 'bg-[#111215] text-[#FAF8F4] font-semibold shadow-xs'
+                  : 'text-[#424650] hover:text-[#111215] hover:bg-[#EDE8E1]'
               }`}
               role="tab"
               aria-selected={subTab === tab.id}
@@ -3488,8 +3490,11 @@ function GalleryStudentComponent({
           
           {/* SCULPTURAL CIRCULAR HERO BUTTON */}
           <button
+            type="button"
             onClick={() => onSignal(chosenFactor)}
             className={`btn-student-sculpted ${isSignaled ? 'is-lost' : ''}`}
+            aria-pressed={isSignaled}
+            aria-label={isSignaled ? "Friction active: Lost Here. Click to signal again" : "Signal friction: Lost Here"}
           >
             <span className="font-serif text-xl font-normal tracking-tight uppercase">
               {isSignaled ? 'LOST HERE' : 'LOST HERE'}
@@ -3571,7 +3576,7 @@ function GalleryStudentComponent({
             />
             <button
               type="submit"
-              className="btn-gallery-pill-black !py-2 text-[10px]"
+              className="btn-gallery-pill-black btn-sm w-full sm:w-auto"
             >
               SUBMIT ANONYMOUSLY
             </button>
@@ -3585,8 +3590,10 @@ function GalleryStudentComponent({
               >
                 <span className="text-[#383B42] text-xs pr-2">{q.text}</span>
                 <button
+                  type="button"
                   onClick={() => onUpvoteQuestion(q.id)}
-                  className="px-2.5 py-1 rounded-full bg-[#F5ECE0] border border-[#EAD1A8] text-[#C4761E] font-mono text-xs font-bold transition"
+                  className="gallery-nuance-pill active"
+                  aria-label={`Upvote question, current count: ${q.upvotes}`}
                 >
                   +{q.upvotes}
                 </button>
@@ -3613,32 +3620,6 @@ function GalleryStudentComponent({
           ))}
         </div>
       )}
-
-      {/* Bottom Nav Segment */}
-      <div className="pt-3 border-t border-[#DDD7CB] flex items-center justify-around text-[10px] font-mono tracking-[0.16em] uppercase overflow-x-auto gap-1" role="tablist" aria-label="Student view tabs">
-        {[
-          { id: 'pulse', label: 'PULSE' },
-          { id: 'timings', label: 'TIMINGS' },
-          { id: 'syllabus', label: 'SYLLABUS' },
-          { id: 'question', label: 'ASK' },
-          { id: 'notes', label: `LOG (${notes.length})` },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setSubTab(tab.id)}
-            className={`py-1 px-2.5 rounded transition whitespace-nowrap ${
-              subTab === tab.id
-                ? 'text-[#111215] font-bold bg-[#E5DFD5]'
-                : 'text-[#7A7E89] hover:text-[#111215]'
-            }`}
-            role="tab"
-            aria-selected={subTab === tab.id}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
 
     </div>
   );

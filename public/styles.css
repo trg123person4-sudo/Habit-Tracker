@@ -13,9 +13,14 @@
   --border-subtle: #DDD7CB;
   --border-dark: #C8C1B2;
 
+  --text-primary: #111215;
+  --text-secondary: #424650;
+  --text-muted: #767B87;
+  --text-accent: #B86714;
+  --text-inverse: #FAF8F4;
+
   --text-ink: #111215;
   --text-soft: #424650;
-  --text-muted: #7E828E;
 
   --accent-amber: #C4761E;
   --accent-amber-glow: rgba(196, 118, 30, 0.16);
@@ -48,16 +53,18 @@ button {
 
 /* Pill buttons need a rounder focus ring to match their shape */
 .btn-gallery-pill-black:focus-visible,
-.btn-gallery-pill-outline:focus-visible {
+.btn-gallery-pill-outline:focus-visible,
+.gallery-nuance-pill:focus-visible {
   outline: 2px solid var(--accent-amber);
   outline-offset: 3px;
   border-radius: 9999px;
 }
 
-/* Gallery nav buttons: underline + ring combo */
-.gallery-nav-btn:focus-visible {
+/* Gallery nav and link buttons */
+.gallery-nav-btn:focus-visible,
+.btn-gallery-link:focus-visible {
   outline: 2px solid var(--accent-amber);
-  outline-offset: 3px;
+  outline-offset: 2px;
   border-radius: 6px;
 }
 
@@ -130,23 +137,28 @@ body {
 .gallery-nav-btn {
   font-size: 11px;
   font-family: var(--font-mono);
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
   transition: all 0.2s ease;
-  padding: 4px 8px;
+  padding: 8px 16px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  border-radius: 6px;
 }
 
 .gallery-nav-btn:hover {
   color: var(--text-ink);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .gallery-nav-btn.active {
   color: var(--text-ink);
   font-weight: 700;
-  border-bottom: 2px solid var(--text-ink);
+  background: #E5DFD5;
+  border-bottom: none;
 }
 
 /* Pill Buttons */
@@ -156,7 +168,7 @@ body {
   border-radius: 9999px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 12px 28px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -166,6 +178,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  cursor: pointer;
+}
+
+.btn-gallery-pill-black.btn-sm {
+  padding: 6px 14px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
 }
 
 .btn-gallery-pill-black:hover {
@@ -184,7 +203,7 @@ body {
   border-radius: 9999px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 12px 28px;
   border: 1px solid #CBC4B5;
@@ -194,6 +213,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  cursor: pointer;
+}
+
+.btn-gallery-pill-outline.btn-sm {
+  padding: 6px 14px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
 }
 
 .btn-gallery-pill-outline:hover {
@@ -237,31 +263,77 @@ body {
   width: 170px;
   height: 170px;
   border-radius: 9999px;
-  background: #F8F5EF;
-  border: 1.5px solid #CBC4B5;
-  box-shadow: 0 8px 24px rgba(35, 30, 20, 0.06), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  background: #FFFFFF;
+  border: 2px solid #111215;
+  box-shadow: 0 6px 0 #CBC4B5, 0 12px 24px rgba(17, 18, 21, 0.08);
   color: #111215;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   user-select: none;
   cursor: pointer;
 }
 
 .btn-student-sculpted:hover {
   border-color: #111215;
-  background: #FCFAF6;
-  transform: scale(1.02);
-  box-shadow: 0 12px 32px rgba(35, 30, 20, 0.09);
+  background: #FAF8F4;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #CBC4B5, 0 16px 28px rgba(17, 18, 21, 0.12);
+}
+
+.btn-student-sculpted:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #CBC4B5, 0 4px 10px rgba(17, 18, 21, 0.08);
 }
 
 .btn-student-sculpted.is-lost {
   background: #111215;
   color: #EDE8E1;
   border-color: #111215;
-  box-shadow: 0 12px 36px rgba(17, 18, 21, 0.25);
+  box-shadow: 0 6px 0 #383B42, 0 12px 36px rgba(17, 18, 21, 0.25);
+}
+
+.btn-student-sculpted.is-lost:hover {
+  background: #000000;
+  box-shadow: 0 8px 0 #383B42, 0 16px 36px rgba(17, 18, 21, 0.3);
+}
+
+.btn-student-sculpted.is-lost:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #383B42, 0 4px 12px rgba(17, 18, 21, 0.2);
+}
+
+/* Inline Link / Ghost Action Button */
+.btn-gallery-link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-gallery-link:hover {
+  color: var(--text-ink);
+}
+
+.btn-gallery-link.accent {
+  color: var(--text-accent);
+}
+
+.btn-gallery-link.accent:hover {
+  color: #9A5B0F;
+  background: #F5ECE0;
 }
 
 /* Nuance Tag Pills & Grid */
