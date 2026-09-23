@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: chatdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: realtime-chat/package-lock.json
+
+      - name: Install dependencies
+        working-directory: realtime-chat
+        run: npm ci
+
+      - name: Type check
+        working-directory: realtime-chat
+        run: npm run typecheck
+
+      - name: Lint
+        working-directory: realtime-chat
+        run: npm run lint
+
+      - name: Run Prisma Generate & Migrations
+        working-directory: realtime-chat/apps/server
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/chatdb?schema=public
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+
+      - name: Run Tests
+        working-directory: realtime-chat
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/chatdb?schema=public
+          REDIS_URL: redis://localhost:6379
+          JWT_ACCESS_SECRET: c29tZXNlY3JldGFjY2Vzc2tleXZhbHVlMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM=
+          JWT_REFRESH_SECRET: c29tZXNlY3JldHJlZnJlc2hrZXl2YWx1ZTEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIz=
+        run: npm run test
+
+      - name: Build packages and applications
+        working-directory: realtime-chat
+        run: npm run build
